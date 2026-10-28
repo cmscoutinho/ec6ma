@@ -1,0 +1,1324 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Grafos em Matrizes · Turma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: papel quadriculado de matemática discreta. Cabeçalho curto; a demonstração (desenho ↔ matrizes) abre a página; depois laboratório, exercícios práticos e teóricos. */
+:root{
+  --bg:#F2F2F7; --surface:#FCFCFE; --sunk:#E8E7F0; --ink:#1C1B2E; --muted:#5E5C75; --line:#D3D1DE; --dot:#C9C7D8;
+  --vtx:#2F54D4; --edge:#D2480F; --out:#15804A; --in:#C2255C;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Martian Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121220; --surface:#1A1A2B; --sunk:#0E0E19; --ink:#E7E6F2; --muted:#9C9AB4; --line:#2E2D45; --dot:#34334D;
+    --vtx:#7C98FF; --edge:#FF8A4C; --out:#4FD08C; --in:#FF6B9A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121220; --surface:#1A1A2B; --sunk:#0E0E19; --ink:#E7E6F2; --muted:#9C9AB4; --line:#2E2D45; --dot:#34334D;
+  --vtx:#7C98FF; --edge:#FF8A4C; --out:#4FD08C; --in:#FF6B9A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
+h1,h2,h3,h4{margin:0;text-wrap:balance}
+p{margin:0}
+a{color:var(--vtx)}
+.kv{color:var(--vtx);font-weight:600} .ke{color:var(--edge);font-weight:600}
+.ko{color:var(--out);font-weight:600} .ki{color:var(--in);font-weight:600}
+:focus-visible{outline:2px solid var(--vtx);outline-offset:2px}
+
+/* ---------- Cabeçalho ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);padding-block:clamp(28px,5vw,56px) 20px;align-items:end}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(2.1rem,5.4vw,4rem);line-height:1;letter-spacing:-.03em}
+h1 .v{color:var(--vtx)} h1 .e{color:var(--edge)}
+.lead{font-size:1.08rem;max-width:56ch}
+.hero-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hero-pair div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px}
+.hero-pair b{font-family:var(--f-display);font-size:.88rem;font-weight:500}
+.hero-pair span{font-size:.9rem;color:var(--muted);line-height:1.4}
+.hero-pair .dim{font-family:var(--f-mono);font-size:.78rem;color:var(--ink)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px 26px}
+nav.toc a{font-family:var(--f-mono);font-size:.74rem;color:var(--ink);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.toc a:hover{border-color:var(--ink)}
+
+/* ---------- Seções ---------- */
+section{padding-block:clamp(32px,5vw,56px);border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:8px;margin-bottom:24px;max-width:72ch}
+.sec-head .num{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+h2{font-family:var(--f-display);font-weight:500;font-size:clamp(1.35rem,2.8vw,2rem);line-height:1.15;letter-spacing:-.02em}
+.sec-head p{color:var(--muted)}
+h3.sub{font-family:var(--f-display);font-weight:500;font-size:1.1rem;margin:30px 0 6px}
+p.subp{color:var(--muted);font-size:.95rem;margin-bottom:14px;max-width:72ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.lbl{font-family:var(--f-mono);font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- Controles ---------- */
+button{font:inherit;color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:.9rem;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn-primary:hover{background:var(--vtx);border-color:var(--vtx)}
+.btn.on{background:var(--in);border-color:var(--in);color:#fff}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--sunk)}
+.seg button{font-size:.84rem;font-weight:600;padding:5px 11px;border:0;border-radius:6px;background:transparent;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.spread{justify-content:space-between}
+select{font:inherit;font-size:.88rem;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+
+/* ---------- Desenho do grafo ---------- */
+.canvas{position:relative;border-radius:8px;border:1px solid var(--line);background-color:var(--surface);background-image:radial-gradient(var(--dot) 1px,transparent 1.2px);background-size:20px 20px;overflow:hidden}
+.canvas svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.g-edge{fill:none;stroke:var(--ink);stroke-width:2.2;transition:stroke .2s,stroke-width .2s,opacity .2s}
+.g-head{fill:var(--ink);transition:fill .2s}
+.g-ehit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer}
+.g-elbl{font:italic 600 13px var(--f-body);fill:var(--muted);text-anchor:middle;dominant-baseline:central;transition:fill .2s}
+.g-v circle{fill:var(--surface);stroke:var(--ink);stroke-width:2;transition:fill .2s,stroke .2s}
+.g-v text{font:600 15px var(--f-body);fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.g-v{cursor:pointer}
+.ge.todo .g-edge{stroke:var(--line);stroke-dasharray:5 5} .ge.todo .g-head{fill:var(--line)} .ge.todo .g-elbl{fill:var(--line)}
+.ge.hl .g-edge,.ge.cur .g-edge{stroke:var(--edge);stroke-width:3.6} .ge.hl .g-head,.ge.cur .g-head{fill:var(--edge)} .ge.hl .g-elbl,.ge.cur .g-elbl{fill:var(--edge)}
+.g-v.hl circle{stroke:var(--vtx);fill:color-mix(in srgb,var(--vtx) 16%,var(--surface));stroke-width:3}
+.g-v.sel circle{stroke:var(--vtx);fill:var(--vtx)} .g-v.sel text{fill:var(--surface)}
+.g-v.src circle{stroke:var(--out);stroke-width:3} .g-v.dst circle{stroke:var(--in);stroke-width:3}
+.ge.ok .g-edge{stroke:var(--out);stroke-width:3} .ge.ok .g-head{fill:var(--out)}
+.ge.bad .g-edge{stroke:var(--in);stroke-width:3} .ge.bad .g-head{fill:var(--in)}
+.ge.miss .g-edge{stroke:var(--in);stroke-dasharray:4 5;opacity:.7} .ge.miss .g-head{fill:var(--in);opacity:.7}
+.token{fill:var(--edge);filter:drop-shadow(0 0 5px var(--edge))}
+.del-mode .g-v,.del-mode .g-ehit{cursor:not-allowed}
+.hint-line{font-size:.86rem;color:var(--muted)}
+
+/* ---------- Matrizes ---------- */
+.mxwrap{overflow-x:auto;max-width:100%}
+table.mx{border-collapse:separate;border-spacing:0;font:13px/1 var(--f-mono)}
+.mx th,.mx td{width:40px;height:32px;text-align:center;vertical-align:middle;padding:0 4px;transition:background .15s,color .15s}
+.mx thead th{font:600 14px var(--f-body);color:var(--muted);border-bottom:1.5px solid var(--ink)}
+.mx tbody th{font:600 14px var(--f-body);color:var(--muted);border-right:1.5px solid var(--ink)}
+.mx th.corner{font:italic 12px var(--f-body);border-right:1.5px solid var(--ink)}
+.mx td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);cursor:default}
+.mx td.z{color:var(--muted);opacity:.55}
+.mx td.p{color:var(--out);font-weight:600} .mx td.n{color:var(--in);font-weight:600} .mx td.pm{color:var(--edge);font-weight:600}
+.mx td.one{font-weight:600}
+.mx td.empty{color:var(--line)}
+.mx td.multi{position:relative} .mx td.multi::after{content:"";position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--edge)}
+.mx .sum{color:var(--muted);font-style:normal;background:var(--sunk);border-right:0}
+.mx thead th.sum{font:600 10.5px var(--f-mono);letter-spacing:.02em;color:var(--muted);background:var(--sunk);white-space:nowrap;padding:0 6px}
+.mx td.sum,.mx tr.sumrow th{font-weight:600}
+.mx tr.sumrow td,.mx tr.sumrow th{background:var(--sunk);border-top:1.5px solid var(--line)}
+.mx tr.sumrow th{font:600 10.5px var(--f-mono);white-space:nowrap}
+.mx .sep{border-left:1.5px solid var(--line)}
+.mx .hl-r{background:color-mix(in srgb,var(--vtx) 13%,transparent)}
+.mx .hl-c{background:color-mix(in srgb,var(--edge) 13%,transparent)}
+.mx .hl-x{background:color-mix(in srgb,var(--edge) 34%,transparent);color:var(--ink)!important;opacity:1!important}
+.mx th.hl-r{color:var(--vtx)} .mx th.hl-c{color:var(--edge)}
+.mx td.pop{animation:pop .7s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(.3);background:color-mix(in srgb,var(--edge) 45%,transparent)}100%{transform:scale(1)}}
+.mx td.flash{animation:flash 1.1s}
+@keyframes flash{0%,40%{background:color-mix(in srgb,var(--vtx) 32%,transparent)}}
+.mx.edit td:not(.sum){cursor:pointer}
+.mx.edit td:not(.sum):hover{outline:2px solid var(--vtx);outline-offset:-2px}
+.mx td.wrong{outline:2px solid var(--in);outline-offset:-2px;background:color-mix(in srgb,var(--in) 12%,transparent)}
+.mx td.right{background:color-mix(in srgb,var(--out) 10%,transparent)}
+.mxhead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;justify-content:space-between}
+.mxhead h4{font:500 .98rem var(--f-display)}
+.dim{font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
+.rule{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:start;gap:10px;font-size:.9rem;padding:8px 12px;border-radius:8px;background:var(--sunk)}
+.rule .lhs{font:italic 600 1rem var(--f-body)}
+.rule .cases{border-left:2px solid var(--ink);padding-left:10px;display:grid;gap:1px;line-height:1.45}
+.rule .cases b{font-family:var(--f-mono);font-size:.82rem;display:inline-block;min-width:26px}
+
+/* ---------- Demonstração ---------- */
+.demo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-items:start}
+.caption{min-height:3.3em;font-size:.95rem;padding:10px 12px;border-left:3px solid var(--edge);background:color-mix(in srgb,var(--edge) 7%,transparent);border-radius:0 8px 8px 0}
+.mxstack{display:grid;gap:18px}
+
+/* ---------- Laboratório ---------- */
+.lab{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start}
+.degs{display:flex;flex-wrap:wrap;gap:6px}
+.deg{font-family:var(--f-mono);font-size:.72rem;padding:4px 8px;border-radius:7px;background:var(--sunk)}
+.deg b{font-family:var(--f-body);font-size:.88rem;margin-right:4px}
+.note{font-size:.86rem;color:var(--muted);padding:8px 10px;border:1px dashed var(--line);border-radius:8px}
+.note.warn{border-color:var(--edge);color:var(--ink)}
+pre.py{font:12px/1.55 var(--f-mono);background:var(--sunk);border-radius:8px;padding:12px 14px;margin:0;overflow-x:auto;max-height:240px}
+
+/* ---------- Exercícios ---------- */
+.ex{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.fb{font-size:.92rem;padding:9px 12px;border-radius:8px;background:var(--sunk);min-height:2.6em}
+.fb.ok{background:color-mix(in srgb,var(--out) 13%,transparent);color:var(--ink)} .fb.ok b{color:var(--out)}
+.fb.bad{background:color-mix(in srgb,var(--in) 11%,transparent)} .fb.bad b{color:var(--in)}
+.src{font-size:.78rem;color:var(--muted)}
+.dg-table{border-collapse:collapse;font-size:.9rem}
+.dg-table th,.dg-table td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:center}
+.dg-table th{font-weight:600;color:var(--muted);font-size:.8rem}
+.dg-table input{width:58px;font:600 .95rem var(--f-mono);text-align:center;padding:4px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.dg-table input.ok{border-color:var(--out);background:color-mix(in srgb,var(--out) 12%,transparent)}
+.dg-table input.bad{border-color:var(--in);background:color-mix(in srgb,var(--in) 12%,transparent)}
+
+.quiz-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.qscore{font:600 .95rem var(--f-mono)}
+.qbar{flex:1;min-width:160px;max-width:360px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.qbar i{display:block;height:100%;width:0;background:var(--out);transition:width .4s}
+.quiz{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px}
+.q h4{font:600 1rem/1.45 var(--f-body)}
+.q .qn{font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
+.opts{display:grid;gap:6px}
+.opts button{text-align:left;font-size:.92rem;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;line-height:1.4}
+.opts button:hover:not([disabled]){border-color:var(--ink)}
+.opts button[disabled]{cursor:default}
+.opts button.right{border-color:var(--out);background:color-mix(in srgb,var(--out) 13%,transparent)}
+.opts button.wrong{border-color:var(--in);background:color-mix(in srgb,var(--in) 11%,transparent)}
+.q .why{font-size:.9rem;border-left:3px solid var(--out);padding-left:10px}
+.q .why.miss{border-left-color:var(--in)}
+.qmx{font:12px var(--f-mono)}
+footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--muted);font-size:.85rem}
+
+/* ---------- Atividade da turma ---------- */
+html{scroll-padding-top:76px}
+.idbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.idbar>.wrap{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding-block:10px}
+.idbar input{font:inherit;font-size:.92rem;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+#who{flex:1 1 240px} #mat{flex:0 1 170px}
+.idbar input.need{border-color:var(--in);box-shadow:0 0 0 2px color-mix(in srgb,var(--in) 25%,transparent)}
+.pts{font:600 .9rem var(--f-mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pbar{width:110px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--out);transition:width .4s}
+.send-panel{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding-block:0 12px;font-size:.92rem}
+.send-panel.ok span b{color:var(--out)} .send-panel.bad span b{color:var(--in)}
+.tabdone::after{content:" ✓";color:var(--out);font-weight:700}
+.tabrev::after{content:" •";color:var(--muted)}
+.ptinfo{font-size:.9rem;padding:10px 12px;border-radius:8px;background:color-mix(in srgb,var(--out) 9%,transparent);border:1px solid color-mix(in srgb,var(--out) 40%,transparent);max-width:72ch}
+.rk-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rk-bar input[type=password]{font:inherit;font-size:.92rem;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:min(100%,240px)}
+.rk-status{font-size:.88rem;color:var(--muted)}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;margin-block:6px 4px}
+.pod{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:14px;display:grid;gap:4px;text-align:center;min-width:0}
+.pod .pos{font:700 2rem/1 var(--f-display)}
+.pod .nm{font-weight:600;overflow-wrap:anywhere}
+.pod .sc{font:600 .9rem var(--f-mono);color:var(--muted)}
+.pod.p1{padding-block:26px;border-color:var(--out);background:color-mix(in srgb,var(--out) 9%,var(--surface))} .pod.p1 .pos{color:var(--out)}
+.pod.p2 .pos{color:var(--vtx)} .pod.p3 .pos{color:var(--edge)}
+table.rk{width:100%;border-collapse:collapse;font-size:.92rem}
+.rk th{font:600 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px;border-bottom:1.5px solid var(--ink)}
+.rk td{padding:8px;border-bottom:1px solid var(--line)}
+.rk td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rk tr:nth-child(-n+3) td:first-child{font-weight:700}
+.locked{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;padding:22px;border:1.5px dashed var(--line);border-radius:var(--r);background:var(--surface)}
+.locked svg{width:34px;height:34px;color:var(--muted)}
+.locked b{font-family:var(--f-display);font-weight:500;font-size:1.02rem;display:block;margin-bottom:2px}
+.locked p{font-size:.92rem;color:var(--muted)}
+.gate-state{font:600 .8rem var(--f-mono);padding:4px 9px;border-radius:999px;border:1px solid currentColor}
+.gate-state.on{color:var(--out)} .gate-state.off{color:var(--in)}
+.setup ol{margin:0;padding-left:1.3em;display:grid;gap:8px;font-size:.94rem}
+.setup code{font-family:var(--f-mono);font-size:.8rem;background:var(--sunk);padding:1px 5px;border-radius:4px}
+@media (max-width:640px){ .idbar{position:static} .podium{grid-template-columns:1fr} }
+@media (max-width:980px){ .demo,.lab,.ex{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:720px){ .hero{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:420px){ .hero-pair{grid-template-columns:1fr} .mx th,.mx td{width:34px;height:30px} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div class="idbar" id="idbar">
+  <div class="wrap">
+    <span class="lbl">Atividade</span>
+    <input id="who" type="text" placeholder="Seu nome completo" autocomplete="name" aria-label="Seu nome completo" maxlength="80">
+    <input id="mat" type="text" placeholder="Matrícula (opcional)" aria-label="Matrícula" maxlength="30">
+    <span class="pts" id="pts">0 / 17 pontos</span>
+    <div class="pbar" aria-hidden="true"><i id="pbar"></i></div>
+    <button class="btn btn-primary" id="send" type="button">Enviar resultado</button>
+  </div>
+  <div class="wrap send-panel" id="sendp" hidden aria-live="polite"></div>
+</div>
+<header class="wrap hero">
+  <div>
+    <div class="eyebrow">Teoria de Grafos e Matemática Discreta · Aula 06</div>
+    <h1>Grafos em <span class="v">Matri</span><span class="e">zes</span></h1>
+    <p class="lead" style="margin-top:18px">Um desenho de grafo é bom para olhos humanos. Um computador prefere tabelas. Aqui você vê, mexe e pratica as duas tabelas mais usadas para guardar um grafo inteiro.</p>
+    <p class="ptinfo" style="margin-top:14px"><b>Atividade valendo pontos.</b> Escreva seu nome na barra do topo. As partes B e C da seção 3 e as questões da seção 4 valem 1 ponto cada e abrem quando o professor liberar. Ao terminar, clique em <b>Enviar resultado</b>. Seu progresso fica salvo neste navegador.</p>
+  </div>
+  <div class="hero-pair">
+    <div><b class="ke">Incidência</b><span>Linhas são <span class="kv">vértices</span>, colunas são <span class="ke">arestas</span>.</span><span class="dim">n × m</span></div>
+    <div><b class="kv">Adjacência</b><span>Linhas e colunas são <span class="kv">vértices</span>.</span><span class="dim">n × n</span></div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="toc" aria-label="Seções">
+    <a href="#demo">1 · Demonstração</a>
+    <a href="#lab">2 · Laboratório</a>
+    <a href="#praticos">3 · Exercícios práticos</a>
+    <a href="#teoricos">4 · Exercícios teóricos</a>
+    <a href="#ranking">5 · Ranking</a>
+  </nav>
+</div>
+
+<main class="wrap">
+<!-- ================= 1. DEMONSTRAÇÃO ================= -->
+<section id="demo">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 1</span>
+    <h2>Do desenho às matrizes, aresta por aresta</h2>
+    <p>Clique em "Construir do zero" e acompanhe cada aresta preenchendo as duas matrizes. Depois passe o mouse sobre um vértice, uma aresta ou qualquer célula para ver a correspondência.</p>
+  </div>
+  <div class="demo">
+    <div class="card">
+      <div class="row spread">
+        <div class="seg" id="d-type" role="group" aria-label="Tipo de grafo">
+          <button type="button" data-v="0" aria-pressed="true">Não dirigido</button>
+          <button type="button" data-v="1" aria-pressed="false">Dirigido</button>
+        </div>
+        <div class="seg" id="d-ver" role="group" aria-label="Versão da matriz de adjacência" hidden>
+          <button type="button" data-v="1" aria-pressed="true">Adjacência v1</button>
+          <button type="button" data-v="2" aria-pressed="false">v2</button>
+        </div>
+      </div>
+      <div class="canvas"><svg id="d-svg" viewBox="0 0 380 340" aria-label="Grafo de exemplo"></svg></div>
+      <div class="caption" id="d-cap" aria-live="polite"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="d-build" type="button">Construir do zero</button>
+        <button class="btn" id="d-step" type="button">Próxima aresta</button>
+        <button class="btn" id="d-full" type="button">Mostrar tudo</button>
+      </div>
+    </div>
+    <div class="mxstack">
+      <div class="card">
+        <div class="mxhead"><h4 class="ke">Matriz de incidência</h4><span class="dim" id="d-inc-dim"></span></div>
+        <div class="mxwrap" id="d-inc"></div>
+        <div class="rule" id="d-inc-rule"></div>
+      </div>
+      <div class="card">
+        <div class="mxhead"><h4 class="kv">Matriz de adjacência</h4><span class="dim" id="d-adj-dim"></span></div>
+        <div class="mxwrap" id="d-adj"></div>
+        <div class="rule" id="d-adj-rule"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. LABORATÓRIO ================= -->
+<section id="lab">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 2</span>
+    <h2>Laboratório: monte o seu grafo</h2>
+    <p>Clique no espaço vazio para criar um vértice. Clique em um vértice e depois em outro para ligá-los. Arraste para mover. Você também pode clicar nas células da matriz de adjacência para criar ou apagar arestas.</p>
+  </div>
+  <div class="lab">
+    <div class="card">
+      <div class="row spread">
+        <div class="seg" id="l-type" role="group" aria-label="Tipo de grafo">
+          <button type="button" data-v="0">Não dirigido</button>
+          <button type="button" data-v="1">Dirigido</button>
+        </div>
+        <div class="row">
+          <label class="lbl" for="l-preset" style="text-transform:none;letter-spacing:0;font-size:.8rem">Carregar</label>
+          <select id="l-preset">
+            <option value="">escolha…</option>
+            <option value="ex1">Exemplo 1 (não dirigido)</option>
+            <option value="ex2">Exemplo 2: K₄</option>
+            <option value="ex3">Exemplo 3: com vértice isolado</option>
+            <option value="ex4">Exemplo 4 (dirigido)</option>
+            <option value="ex5">Exemplo 5 (dirigido, ciclo)</option>
+            <option value="rnd">Grafo aleatório</option>
+            <option value="empty">Vazio</option>
+          </select>
+        </div>
+      </div>
+      <div class="canvas" id="l-canvas"><svg id="l-svg" viewBox="0 0 560 400" aria-label="Editor de grafo"></svg></div>
+      <div class="row spread">
+        <span class="hint-line" id="l-hint">Até 9 vértices.</span>
+        <div class="row">
+          <button class="btn" id="l-del" type="button" aria-pressed="false">Modo apagar</button>
+          <button class="btn" id="l-clear" type="button">Limpar</button>
+        </div>
+      </div>
+      <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
+        <span class="lbl" style="margin-right:4px">Trocar rótulos</span>
+        <select id="l-sw1" aria-label="Primeiro vértice"></select><span>↔</span><select id="l-sw2" aria-label="Segundo vértice"></select>
+        <button class="btn" id="l-swap" type="button">Trocar</button>
+      </div>
+      <p class="hint-line">Trocar dois rótulos permuta as linhas (e colunas) correspondentes. O desenho continua o mesmo: os grafos são isomorfos.</p>
+    </div>
+    <div class="mxstack">
+      <div class="card">
+        <div class="mxhead"><h4 class="ke">Incidência</h4><span class="dim" id="l-inc-dim"></span></div>
+        <div class="mxwrap" id="l-inc"></div>
+      </div>
+      <div class="card">
+        <div class="mxhead"><h4 class="kv">Adjacência</h4>
+          <div class="seg" id="l-ver" role="group" aria-label="Versão" hidden><button type="button" data-v="1">v1</button><button type="button" data-v="2">v2</button></div>
+          <span class="dim" id="l-adj-dim"></span></div>
+        <div class="mxwrap" id="l-adj"></div>
+        <div class="note" id="l-note" hidden></div>
+      </div>
+      <div class="card">
+        <div class="mxhead"><h4>Graus</h4><span class="dim" id="l-sum"></span></div>
+        <div class="degs" id="l-degs"></div>
+      </div>
+      <div class="card">
+        <div class="mxhead"><h4>Em Python</h4><button class="btn" id="l-copy" type="button">Copiar</button></div>
+        <pre class="py" id="l-py"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. PRÁTICOS ================= -->
+<section id="praticos">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 3</span>
+    <h2>Exercícios práticos</h2>
+    <p>Três tipos de tarefa: desenhar o grafo a partir da matriz, preencher a matriz a partir do grafo e ler os graus direto da matriz. Cada uma tem correção automática.</p>
+    <p class="ptinfo">A parte <b>A</b> é treino e não vale ponto. As partes <b>B</b> e <b>C</b> valem 1 ponto por exercício certo (5 no total) e abrem quando o professor liberar. Você pode verificar quantas vezes quiser; usar <b>Mostrar resposta</b> antes de acertar faz o exercício deixar de valer ponto.</p>
+  </div>
+
+  <h3 class="sub">A · Desenhe o grafo <span class="dim">(treino)</span></h3>
+  <p class="subp">Clique em dois vértices para ligá-los (no dirigido, o primeiro clique é a origem). Clique numa aresta para apagá-la.</p>
+  <div class="row" style="margin-bottom:12px"><div class="seg" id="dx-tabs" role="group" aria-label="Exercício"></div></div>
+  <div class="ex">
+    <div class="card">
+      <div class="mxhead"><h4 id="dx-title"></h4><span class="dim" id="dx-dim"></span></div>
+      <p class="hint-line" id="dx-desc"></p>
+      <div class="mxwrap" id="dx-mx"></div>
+    </div>
+    <div class="card">
+      <div class="canvas"><svg id="dx-svg" viewBox="0 0 360 300" aria-label="Área de desenho"></svg></div>
+      <div class="row">
+        <button class="btn btn-primary" id="dx-check" type="button">Verificar</button>
+        <button class="btn" id="dx-show" type="button">Mostrar resposta</button>
+        <button class="btn" id="dx-clear" type="button">Limpar</button>
+      </div>
+      <div class="fb" id="dx-fb" aria-live="polite">Nenhuma aresta desenhada ainda.</div>
+    </div>
+  </div>
+
+  <div class="locked" id="lock-prat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg><div><b>Aguardando liberação do professor</b><p>Esta parte vale pontos e abre quando o professor liberar. A página verifica sozinha a cada 20 segundos, não precisa recarregar. <span class="gate-msg"></span></p></div></div>
+  <div id="gated-prat">
+  <h3 class="sub">B · Preencha a matriz</h3>
+  <p class="subp">Clique numa célula para mudar o valor. No dirigido, a incidência alterna entre 0, 1 e −1.</p>
+  <div class="row" style="margin-bottom:12px">
+    <div class="seg" id="fx-tabs" role="group" aria-label="Grafo"></div>
+    <div class="seg" id="fx-kind" role="group" aria-label="Matriz pedida"><button type="button" data-v="inc">Incidência</button><button type="button" data-v="adj">Adjacência</button></div>
+  </div>
+  <div class="ex">
+    <div class="card">
+      <div class="canvas"><svg id="fx-svg" viewBox="0 0 400 300" aria-label="Grafo do exercício"></svg></div>
+      <p class="src" id="fx-src"></p>
+    </div>
+    <div class="card">
+      <div class="mxhead"><h4 id="fx-title"></h4><span class="dim" id="fx-dim"></span></div>
+      <div class="mxwrap" id="fx-mx"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="fx-check" type="button">Verificar</button>
+        <button class="btn" id="fx-show" type="button">Mostrar resposta</button>
+        <button class="btn" id="fx-clear" type="button">Zerar</button>
+      </div>
+      <div class="fb" id="fx-fb" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <h3 class="sub">C · Graus pela matriz</h3>
+  <p class="subp">A matriz abaixo é de adjacência (versão 1) de um grafo dirigido. Sem desenhar, preencha o grau de entrada e de saída de cada vértice.</p>
+  <div class="ex">
+    <div class="card">
+      <div class="mxhead"><h4 class="kv">Matriz de adjacência</h4><button class="btn" id="gx-new" type="button">Nova matriz</button></div>
+      <div class="mxwrap" id="gx-mx"></div>
+    </div>
+    <div class="card">
+      <div class="mxwrap"><table class="dg-table" id="gx-table"></table></div>
+      <div class="row">
+        <button class="btn btn-primary" id="gx-check" type="button">Verificar</button>
+        <button class="btn" id="gx-draw" type="button">Ver o grafo</button>
+      </div>
+      <div class="fb" id="gx-fb" aria-live="polite"></div>
+      <div class="canvas" id="gx-canvas" hidden><svg id="gx-svg" viewBox="0 0 360 260" aria-label="Grafo correspondente"></svg></div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= 4. TEÓRICOS ================= -->
+<section id="teoricos">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 4</span>
+    <h2>Exercícios teóricos</h2>
+    <p>Doze questões curtas sobre as propriedades das matrizes. Cada resposta vem com a explicação.</p>
+    <p class="ptinfo">Cada questão vale 1 ponto. Só a primeira resposta conta: pense antes de clicar.</p>
+  </div>
+<div class="locked" id="lock-quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg><div><b>Aguardando liberação do professor</b><p>Esta parte vale pontos e abre quando o professor liberar. A página verifica sozinha a cada 20 segundos, não precisa recarregar. <span class="gate-msg"></span></p></div></div>
+  <div id="gated-quiz">
+  <div class="quiz-top">
+    <span class="qscore" id="q-score">0 de 12 respondidas</span>
+    <div class="qbar"><i id="q-bar"></i></div>
+    
+  </div>
+  <div class="quiz" id="quiz"></div>
+  </div>
+</section>
+<!-- ================= 5. RANKING ================= -->
+<section id="ranking">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 5</span>
+    <h2>Ranking da turma</h2>
+    <p>Área do professor. Digite a chave definida no script da planilha para ver o melhor resultado de cada aluno. Em caso de empate, fica à frente quem levou menos tempo.</p>
+  </div>
+  <div class="card" id="rk-card">
+    <form class="rk-bar" id="rk-form">
+      <input type="password" id="rk-key" placeholder="Chave do professor" autocomplete="current-password" aria-label="Chave do professor">
+      <button class="btn btn-primary" type="submit">Ver ranking</button>
+      <label class="row" style="gap:6px;font-size:.9rem"><input type="checkbox" id="rk-auto">Atualizar a cada 20 s</label>
+      <span class="rk-status" id="rk-status" aria-live="polite"></span>
+    </form>
+    <div class="rk-bar" id="rk-rounds" hidden>
+      <label for="rk-rsel" style="font-size:.9rem">Rodada</label>
+      <select id="rk-rsel"></select>
+      <button class="btn" type="button" id="rk-new">Iniciar nova rodada</button>
+      <span style="flex:1"></span>
+      <span class="gate-state off" id="rk-gate">bloqueados</span>
+      <button class="btn btn-primary" type="button" id="rk-lib">Liberar exercícios</button>
+    </div>
+    <div class="note warn" id="rk-confirm" hidden></div>
+    <div id="rk-out"></div>
+  </div>
+  <div class="card setup" id="rk-setup" hidden>
+    <h3 class="lbl">Configuração pendente</h3>
+    <p style="font-size:.94rem">Esta cópia da página ainda não está ligada a uma planilha. Os alunos conseguem fazer os exercícios, mas não conseguem enviar. Para ligar:</p>
+    <ol>
+      <li>Crie uma Planilha Google nova e abra <b>Extensões → Apps Script</b>.</li>
+      <li>Apague o conteúdo do editor, cole o arquivo <code>Codigo.gs</code> e troque <code>CHAVE_PROFESSOR</code> por uma senha sua. Salve.</li>
+      <li><b>Implantar → Nova implantação</b>, tipo <b>App da Web</b>, executar como <b>Eu</b>, acesso <b>Qualquer pessoa</b>. Autorize e copie a URL que termina em <code>/exec</code>.</li>
+      <li>Abra este arquivo HTML num editor de texto e cole a URL em <code>SCRIPT_URL</code>, no começo do script. Ajuste <code>TURMA</code> se quiser.</li>
+      <li>Publique o arquivo (GitHub Pages, AVA ou outro site) e passe o link aos alunos.</li>
+    </ol>
+  </div>
+</section>
+</main>
+<footer class="wrap">Grafos em Matrizes · material de apoio para Teoria de Grafos e Matemática Discreta (Aula 06: matrizes de incidência e adjacência). Exemplos e exercícios baseados nos slides da aula.</footer>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+/* ================= CONFIGURAÇÃO DA TURMA ================= */
+// 1) Cole aqui a URL do App da Web do Google Apps Script (termina em /exec):
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzN29Fjt-PSshxGoQXGjN_BqssEIxhYq2OdOMluFt_AUbagGVD4omP6cuGTvRHqIgoshg/exec';
+// 2) Identificação da turma, gravada junto com cada envio:
+const TURMA = 'EC6MA';
+/* ========================================================== */
+
+const CONFIGURED = /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(SCRIPT_URL);
+const STORE_KEY = 'grafos-matrizes-turma-v1';
+const uuid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+function loadState(){ try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); if (s && s.aluno && Array.isArray(s.solved)) return s; } catch (_) {} return null; }
+const ST = loadState() || { seed:Math.floor(Math.random()*2147483647), aluno:uuid(), start:null, nome:'', mat:'', solved:[], revealed:[], quiz:{}, rodada:null };
+function saveState(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(ST)); } catch (_) {} }
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const touch = () => { if (!ST.start){ ST.start = Date.now(); saveState(); } };
+function solve(id){ if (!id.startsWith('dx')) touch(); if (ST.revealed.includes(id) || ST.solved.includes(id)) return false; ST.solved.push(id); saveState(); updPts(); return true; }
+function reveal(id){ if (!id.startsWith('dx')) touch(); if (ST.solved.includes(id) || ST.revealed.includes(id)) return; ST.revealed.push(id); saveState(); updPts(); }
+const itemTag = id => ST.solved.includes(id) ? 'tabdone' : ST.revealed.includes(id) ? 'tabrev' : '';
+function ptMsg(id, got){ if (id.startsWith('dx')) return ' (Parte A é treino: não vale ponto.)'; return got ? ' <b>+1 ponto.</b>' : ST.revealed.includes(id) ? ' Sem ponto: a resposta já tinha sido mostrada.' : ' Ponto já contado.'; }
+
+/* ================= Modelo ================= */
+const clone = g => ({ directed:g.directed, V:g.V.map(v => ({ ...v })), E:g.E.map(e => ({ ...e })) });
+const vName = i => 'v' + (i + 1);
+function mk(directed, pts, edges, ename = 'a'){
+  return { directed, V:pts.map(([x, y], i) => ({ name:vName(i), x, y })), E:edges.map(([s, t], j) => ({ s, t, name:ename + (j + 1) })) };
+}
+function incM(g){ return g.V.map((_, i) => g.E.map(e => g.directed ? (e.s === i ? 1 : e.t === i ? -1 : 0) : (e.s === i || e.t === i ? 1 : 0))); }
+function adjM(g, ver = 1){
+  const n = g.V.length, A = Array.from({ length:n }, () => Array(n).fill(0));
+  for (const e of g.E){
+    if (!g.directed){ A[e.s][e.t]++; if (e.s !== e.t) A[e.t][e.s]++; }
+    else if (ver === 1) A[e.s][e.t]++;
+    else {
+      A[e.s][e.t] = A[e.s][e.t] === -1 || A[e.s][e.t] === 'pm' ? 'pm' : 1;
+      A[e.t][e.s] = A[e.t][e.s] === 1 || A[e.t][e.s] === 'pm' ? 'pm' : -1;
+    }
+  }
+  return A;
+}
+function degrees(g){
+  return g.V.map((_, i) => {
+    const out = g.E.filter(e => e.s === i).length, inn = g.E.filter(e => e.t === i).length;
+    return g.directed ? { out, inn } : { deg:out + inn };
+  });
+}
+
+/* ================= Rótulos ================= */
+const lblHtml = name => { const m = /^([a-z])(\d+)$/.exec(name); return m ? `${m[1]}<sub>${m[2]}</sub>` : esc(name); };
+function svgLabel(text, name, big = true){
+  const m = /^([a-z])(\d+)$/.exec(name);
+  if (!m){ text.textContent = name; return; }
+  text.textContent = m[1];
+  const t = document.createElementNS(NS, 'tspan'); t.setAttribute('font-size', big ? '11' : '10'); t.setAttribute('dy', '4'); t.textContent = m[2];
+  text.appendChild(t);
+}
+
+/* ================= Desenho de grafos (SVG) ================= */
+const R = 19;
+function edgeGeom(g, e, idx){
+  const a = g.V[e.s], b = g.V[e.t];
+  const lo = Math.min(e.s, e.t), hi = Math.max(e.s, e.t);
+  const group = g.E.map((x, j) => [x, j]).filter(([x]) => Math.min(x.s, x.t) === lo && Math.max(x.s, x.t) === hi);
+  const k = group.findIndex(([, j]) => j === idx), n = group.length;
+  const off = n === 1 ? 0 : (k - (n - 1)/2) * 30;
+  const A = g.V[lo], B = g.V[hi];
+  const dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy/L, ny = dx/L;
+  const mx = (a.x + b.x)/2, my = (a.y + b.y)/2;
+  const cx = mx + nx*off*2, cy = my + ny*off*2;
+  const pull = (p, q) => { const ddx = q.x - p.x, ddy = q.y - p.y, d = Math.hypot(ddx, ddy) || 1; return { x:p.x + ddx/d*R, y:p.y + ddy/d*R }; };
+  const p0 = pull(a, { x:cx, y:cy }), p1 = pull(b, { x:cx, y:cy });
+  const d = off ? `M${p0.x.toFixed(1)} ${p0.y.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}` : `M${p0.x.toFixed(1)} ${p0.y.toFixed(1)} L${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+  const tx = p1.x - (off ? cx : p0.x), ty = p1.y - (off ? cy : p0.y), tl = Math.hypot(tx, ty) || 1;
+  const ux = tx/tl, uy = ty/tl;
+  const head = `M${p1.x.toFixed(1)} ${p1.y.toFixed(1)} L${(p1.x - ux*11 + uy*5.5).toFixed(1)} ${(p1.y - uy*11 - ux*5.5).toFixed(1)} L${(p1.x - ux*11 - uy*5.5).toFixed(1)} ${(p1.y - uy*11 + ux*5.5).toFixed(1)}Z`;
+  const side = off ? Math.sign(off) : 1;
+  const lx = mx + nx*(off + side*13), ly = my + ny*(off + side*13);
+  return { d, head, lx, ly };
+}
+function renderGraph(svg, g, o = {}){
+  svg.textContent = '';
+  const ge = document.createElementNS(NS, 'g'), gv = document.createElementNS(NS, 'g');
+  g.E.forEach((e, j) => {
+    const G = edgeGeom(g, e, j), grp = document.createElementNS(NS, 'g');
+    grp.setAttribute('class', 'ge ' + (o.ecls ? o.ecls(e, j) : '')); grp.dataset.e = j;
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('d', G.d); p.setAttribute('class', 'g-edge'); grp.appendChild(p);
+    if (g.directed){ const h = document.createElementNS(NS, 'path'); h.setAttribute('d', G.head); h.setAttribute('class', 'g-head'); grp.appendChild(h); }
+    if (o.labels !== false && e.name){ const t = document.createElementNS(NS, 'text'); t.setAttribute('x', G.lx.toFixed(1)); t.setAttribute('y', G.ly.toFixed(1)); t.setAttribute('class', 'g-elbl'); svgLabel(t, e.name, false); grp.appendChild(t); }
+    const hit = document.createElementNS(NS, 'path'); hit.setAttribute('d', G.d); hit.setAttribute('class', 'g-ehit'); grp.appendChild(hit);
+    ge.appendChild(grp);
+  });
+  (o.extra || []).forEach(({ e, cls }) => {
+    const gg = { ...g, E:[e] }, G = edgeGeom(gg, e, 0), grp = document.createElementNS(NS, 'g');
+    grp.setAttribute('class', 'ge ' + cls);
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('d', G.d); p.setAttribute('class', 'g-edge'); grp.appendChild(p);
+    if (g.directed){ const h = document.createElementNS(NS, 'path'); h.setAttribute('d', G.head); h.setAttribute('class', 'g-head'); grp.appendChild(h); }
+    ge.appendChild(grp);
+  });
+  g.V.forEach((v, i) => {
+    const grp = document.createElementNS(NS, 'g'); grp.setAttribute('class', 'g-v ' + (o.vcls ? o.vcls(v, i) : '')); grp.dataset.v = i;
+    grp.setAttribute('transform', `translate(${v.x},${v.y})`);
+    const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', R); grp.appendChild(c);
+    const t = document.createElementNS(NS, 'text'); svgLabel(t, v.name); grp.appendChild(t);
+    gv.appendChild(grp);
+  });
+  svg.append(ge, gv);
+}
+
+/* ================= Matrizes (HTML) ================= */
+function cellFmt(v, directed){
+  if (v === 'pm') return { t:'±1', c:'pm' };
+  if (v === 0) return { t:'0', c:'z' };
+  if (v === -1) return { t:'−1', c:'n' };
+  if (v === 1) return { t:'1', c:directed ? 'p' : 'one' };
+  if (v === null) return { t:'·', c:'empty' };
+  return { t:String(v), c:'one multi' };
+}
+function mxHtml(o){
+  // o: rows, cols (nomes), M, directed, kind ('inc'|'adj'), right:[{h, vals}], bottom:[{h, vals}], edit, cls(r,c)
+  let h = `<table class="mx${o.edit ? ' edit' : ''}" data-k="${o.kind}"><thead><tr><th class="corner">${o.kind === 'inc' ? 'v / a' : 'v'}</th>`;
+  o.cols.forEach((c, j) => { h += `<th data-c="${j}">${lblHtml(c)}</th>`; });
+  (o.right || []).forEach((s, k) => { h += `<th class="sum${k === 0 ? ' sep' : ''}">${s.h}</th>`; });
+  h += '</tr></thead><tbody>';
+  o.rows.forEach((r, i) => {
+    h += `<tr><th data-r="${i}">${lblHtml(r)}</th>`;
+    o.M[i].forEach((v, j) => {
+      const f = cellFmt(v, o.directed), extra = o.cls ? o.cls(i, j) : '';
+      h += `<td class="${f.c}${extra ? ' ' + extra : ''}" data-r="${i}" data-c="${j}"${typeof v === 'number' && v > 1 ? ` title="${v} arestas entre estes vértices"` : ''}>${f.t}</td>`;
+    });
+    (o.right || []).forEach((s, k) => { h += `<td class="sum${k === 0 ? ' sep' : ''}">${s.vals[i]}</td>`; });
+    h += '</tr>';
+  });
+  (o.bottom || []).forEach(s => {
+    h += `<tr class="sumrow"><th>${s.h}</th>${s.vals.map(v => `<td class="sum">${v}</td>`).join('')}${(o.right || []).map((_, k) => `<td class="sum${k === 0 ? ' sep' : ''}"></td>`).join('')}</tr>`;
+  });
+  return h + '</tbody></table>';
+}
+function sumsFor(kind, g, M, ver){
+  const n = g.V.length, rowCount = (i, val) => M[i].filter(x => x === val || x === 'pm').length;
+  if (kind === 'inc'){
+    if (!g.directed) return { right:[{ h:'grau', vals:M.map(r => r.reduce((s, x) => s + (x || 0), 0)) }], bottom:[{ h:'Σ', vals:M[0] ? M[0].map((_, j) => M.reduce((s, r) => s + (r[j] === null ? 0 : r[j]), 0)) : [] }] };
+    return { right:[{ h:'saída', vals:M.map((_, i) => rowCount(i, 1)) }, { h:'entrada', vals:M.map((_, i) => rowCount(i, -1)) }], bottom:[{ h:'Σ', vals:M[0] ? M[0].map((_, j) => M.reduce((s, r) => s + (r[j] === null ? 0 : r[j]), 0)) : [] }] };
+  }
+  if (!g.directed) return { right:[{ h:'grau', vals:M.map(r => r.reduce((s, x) => s + x, 0)) }] };
+  if (ver === 1) return { right:[{ h:'saída', vals:M.map(r => r.reduce((s, x) => s + x, 0)) }], bottom:[{ h:'entrada', vals:Array.from({ length:n }, (_, j) => M.reduce((s, r) => s + r[j], 0)) }] };
+  return { right:[{ h:'saída (1)', vals:M.map((_, i) => rowCount(i, 1)) }, { h:'entrada (−1)', vals:M.map((_, i) => rowCount(i, -1)) }] };
+}
+
+/* ================= Destaque cruzado ================= */
+function link(root, getG, getVer){
+  const svg = root.svg, inc = root.inc, adj = root.adj;
+  function clear(){
+    root.el.querySelectorAll('.hl,.hl-r,.hl-c,.hl-x,.src,.dst').forEach(x => x.classList.remove('hl', 'hl-r', 'hl-c', 'hl-x', 'src', 'dst'));
+  }
+  function apply(s){
+    clear();
+    s.v.forEach(i => svg.querySelector(`.g-v[data-v="${i}"]`)?.classList.add('hl'));
+    s.e.forEach(j => svg.querySelector(`.ge[data-e="${j}"]`)?.classList.add('hl'));
+    (s.src || []).forEach(i => svg.querySelector(`.g-v[data-v="${i}"]`)?.classList.add('src'));
+    (s.dst || []).forEach(i => svg.querySelector(`.g-v[data-v="${i}"]`)?.classList.add('dst'));
+    const mark = (tbl, R, Cc, X) => {
+      if (!tbl) return;
+      tbl.querySelectorAll('[data-r]').forEach(el => { if (R.includes(+el.dataset.r)) el.classList.add('hl-r'); });
+      tbl.querySelectorAll('[data-c]').forEach(el => { if (Cc.includes(+el.dataset.c)) el.classList.add('hl-c'); });
+      X.forEach(([r, c]) => tbl.querySelector(`td[data-r="${r}"][data-c="${c}"]`)?.classList.add('hl-x'));
+    };
+    mark(inc && inc.querySelector('table'), s.ir, s.ic, s.ix);
+    mark(adj && adj.querySelector('table'), s.ar, s.ac, s.ax);
+  }
+  function forVertex(i){
+    const g = getG(), es = g.E.map((e, j) => [e, j]).filter(([e]) => e.s === i || e.t === i).map(([, j]) => j);
+    apply({ v:[i], e:es, ir:[i], ic:[], ix:es.map(j => [i, j]), ar:[i], ac:[i], ax:[] });
+  }
+  function forEdge(j){
+    const g = getG(), e = g.E[j]; if (!e) return;
+    const ax = g.directed && getVer() === 1 ? [[e.s, e.t]] : [[e.s, e.t], [e.t, e.s]];
+    apply({ v:[e.s, e.t], e:[j], src:g.directed ? [e.s] : [], dst:g.directed ? [e.t] : [], ir:[], ic:[j], ix:[[e.s, j], [e.t, j]], ar:[], ac:[], ax });
+  }
+  function forInc(r, c){ const g = getG(), e = g.E[c]; if (!e) return; apply({ v:[r], e:[c], ir:[r], ic:[c], ix:[[r, c]], ar:[], ac:[], ax:[] }); }
+  function forAdj(r, c){
+    const g = getG(), ver = getVer();
+    const es = g.E.map((e, j) => [e, j]).filter(([e]) => g.directed
+      ? (e.s === r && e.t === c) || (ver === 2 && e.s === c && e.t === r)
+      : (e.s === r && e.t === c) || (e.s === c && e.t === r)).map(([, j]) => j);
+    apply({ v:[r, c], e:es, ir:[], ic:es, ix:[], ar:[r], ac:[c], ax:[[r, c]] });
+  }
+  root.el.addEventListener('pointerover', ev => {
+    if (root.busy && root.busy()) return;
+    const t = ev.target;
+    const v = t.closest('.g-v'), e = t.closest('.ge'), td = t.closest('td[data-r]'), th = t.closest('th[data-r],th[data-c]');
+    if (v) return forVertex(+v.dataset.v);
+    if (e && e.dataset.e !== undefined) return forEdge(+e.dataset.e);
+    if (td){ const k = td.closest('table').dataset.k; return k === 'inc' ? forInc(+td.dataset.r, +td.dataset.c) : forAdj(+td.dataset.r, +td.dataset.c); }
+    if (th){
+      const k = th.closest('table').dataset.k;
+      if (th.dataset.r !== undefined) return forVertex(+th.dataset.r);
+      return k === 'inc' ? forEdge(+th.dataset.c) : forVertex(+th.dataset.c);
+    }
+    clear();
+  });
+  root.el.addEventListener('pointerleave', clear);
+  return { clear };
+}
+
+/* ================= Rótulos das regras ================= */
+const RULES = {
+  inc0:'<span class="lhs">e<sub>ij</sub> =</span><span class="cases"><span><b>1</b> se a aresta a<sub>j</sub> incide no vértice v<sub>i</sub></span><span><b>0</b> senão</span></span>',
+  inc1:'<span class="lhs">e<sub>ij</sub> =</span><span class="cases"><span><b class="ko">1</b> se v<sub>i</sub> é o vértice de <span class="ko">saída</span> de a<sub>j</sub></span><span><b class="ki">−1</b> se v<sub>i</sub> é o vértice de <span class="ki">chegada</span> de a<sub>j</sub></span><span><b>0</b> se v<sub>i</sub> não participa de a<sub>j</sub></span></span>',
+  adj0:'<span class="lhs">e<sub>jk</sub> =</span><span class="cases"><span><b>1</b> se v<sub>j</sub> e v<sub>k</sub> são ligados por uma aresta</span><span><b>0</b> senão</span></span>',
+  adj1:'<span class="lhs">e<sub>jk</sub> =</span><span class="cases"><span><b class="ko">1</b> se existe aresta de v<sub>j</sub> para v<sub>k</sub></span><span><b>0</b> senão</span></span>',
+  adj2:'<span class="lhs">e<sub>jk</sub> =</span><span class="cases"><span><b class="ko">1</b> se a aresta sai de v<sub>j</sub> para v<sub>k</sub></span><span><b class="ki">−1</b> se a aresta chega em v<sub>j</sub> vinda de v<sub>k</sub></span><span><b>0</b> senão</span></span>',
+};
+
+/* ================= Grafos dos slides ================= */
+const P5 = [[80, 55], [300, 55], [80, 175], [300, 175], [190, 290]];
+const EX = {
+  ex1:() => mk(false, P5, [[0,1],[0,2],[0,3],[1,3],[2,4],[3,4]]),
+  ex2:() => mk(false, [[90, 70], [290, 70], [90, 270], [290, 270]], [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]),
+  ex3:() => mk(false, [[90, 70], [270, 70], [90, 230], [270, 230], [400, 150]], [[0,1],[0,2],[1,3]]),
+  ex4:() => mk(true, P5, [[0,1],[2,0],[0,3],[1,3],[3,4]]),
+  ex5:() => mk(true, [[90, 70], [290, 70], [90, 270], [290, 270]], [[0,1],[2,0],[1,3],[3,2]]),
+};
+
+/* ================= 1. DEMONSTRAÇÃO ================= */
+const D = { g:EX.ex1(), ver:1, built:6, cur:-1, playing:false, anim:null, timer:null };
+const dRoot = { el:$('#demo'), svg:$('#d-svg'), inc:$('#d-inc'), adj:$('#d-adj'), busy:() => false };
+const dLink = link(dRoot, () => D.g, () => D.ver);
+function demoSub(){ return { directed:D.g.directed, V:D.g.V, E:D.g.E.slice(0, D.built) }; }
+function renderDemo(pop = -1){
+  const g = D.g, sub = demoSub();
+  renderGraph($('#d-svg'), g, { ecls:(e, j) => j < D.built ? (j === D.cur ? 'cur' : '') : (j === D.cur ? 'cur' : 'todo') });
+  const I = incM(g).map(r => r.map((v, j) => j < D.built ? v : null));
+  const sI = sumsFor('inc', g, I, D.ver);
+  sI.bottom[0].vals = sI.bottom[0].vals.map((v, j) => j < D.built ? v : '·');
+  $('#d-inc').innerHTML = mxHtml({ kind:'inc', rows:g.V.map(v => v.name), cols:g.E.map(e => e.name), M:I, directed:g.directed, ...sI,
+    cls:(r, c) => c === pop ? 'pop' : '' });
+  const A = adjM(sub, D.ver), e = pop >= 0 ? g.E[pop] : null;
+  $('#d-adj').innerHTML = mxHtml({ kind:'adj', rows:g.V.map(v => v.name), cols:g.V.map(v => v.name), M:A, directed:g.directed, ...sumsFor('adj', g, A, D.ver),
+    cls:(r, c) => e && ((r === e.s && c === e.t) || ((!g.directed || D.ver === 2) && r === e.t && c === e.s)) ? 'pop' : '' });
+  $('#d-inc-dim').textContent = `${g.V.length} × ${g.E.length}  (vértices × arestas)`;
+  $('#d-adj-dim').textContent = `${g.V.length} × ${g.V.length}  (vértices × vértices)`;
+  $('#d-inc-rule').innerHTML = g.directed ? RULES.inc1 : RULES.inc0;
+  $('#d-adj-rule').innerHTML = !g.directed ? RULES.adj0 : D.ver === 1 ? RULES.adj1 : RULES.adj2;
+  $('#d-ver').hidden = !g.directed;
+  $('#d-step').disabled = D.built >= g.E.length || !!D.anim;
+}
+function demoCaption(){
+  const g = D.g, cap = $('#d-cap');
+  if (D.built === 0){ cap.innerHTML = 'As duas matrizes começam vazias. A incidência ainda não tem nenhuma coluna preenchida; a adjacência é toda zero.'; return; }
+  if (D.cur < 0 || D.built >= g.E.length && D.cur < 0){
+    cap.innerHTML = g.directed
+      ? `Pronto: ${g.E.length} arestas. Cada coluna da incidência tem um <span class="ko">1</span> e um <span class="ki">−1</span>, e soma zero. ${D.ver === 1 ? 'Na adjacência, a soma da linha dá o grau de <span class="ko">saída</span> e a da coluna, o de <span class="ki">entrada</span>.' : 'Na versão 2 da adjacência, cada aresta aparece duas vezes: 1 na linha de quem sai, −1 na linha de quem chega.'}`
+      : `Pronto: ${g.E.length} arestas. Cada coluna da incidência tem exatamente dois 1, e cada linha soma o grau do vértice. A adjacência é simétrica em relação à diagonal.`;
+    return;
+  }
+  const e = g.E[D.cur], a = lblHtml(e.name), s = lblHtml(g.V[e.s].name), t = lblHtml(g.V[e.t].name);
+  cap.innerHTML = g.directed
+    ? `<b class="ke">${a}</b> sai de <span class="ko">${s}</span> e chega em <span class="ki">${t}</span>. Coluna ${a}: <b class="ko">1</b> na linha ${s} e <b class="ki">−1</b> na linha ${t}. Adjacência: ${D.ver === 1 ? `1 na célula (${s}, ${t})` : `1 em (${s}, ${t}) e −1 em (${t}, ${s})`}.`
+    : `<b class="ke">${a}</b> liga ${s} e ${t}. Coluna ${a}: 1 nas linhas ${s} e ${t}, 0 no resto. Adjacência: 1 em (${s}, ${t}) e também em (${t}, ${s}).`;
+}
+function demoStep(){
+  if (D.anim || D.built >= D.g.E.length) return;
+  const j = D.built; D.cur = j;
+  renderDemo(); demoCaption();
+  const finish = () => {
+    D.anim = null; D.built = j + 1; renderDemo(j); demoCaption();
+    if (D.playing){
+      if (D.built < D.g.E.length) D.timer = setTimeout(demoStep, reduce ? 900 : 1100);
+      else { D.playing = false; D.timer = setTimeout(() => { D.cur = -1; renderDemo(); demoCaption(); }, 1600); }
+    }
+  };
+  if (reduce){ finish(); return; }
+  const path = $(`#d-svg .ge[data-e="${j}"] .g-edge`), L = path.getTotalLength();
+  const tok = document.createElementNS(NS, 'circle'); tok.setAttribute('r', 6); tok.setAttribute('class', 'token'); $('#d-svg').appendChild(tok);
+  const t0 = performance.now(), dur = 700;
+  D.anim = true;
+  const fr = now => {
+    const k = Math.min(1, (now - t0)/dur), q = path.getPointAtLength(L*(k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2)/2));
+    tok.setAttribute('cx', q.x); tok.setAttribute('cy', q.y);
+    if (k < 1) requestAnimationFrame(fr); else { tok.remove(); finish(); }
+  };
+  requestAnimationFrame(fr);
+}
+function demoStop(){ clearTimeout(D.timer); D.playing = false; }
+$('#d-build').addEventListener('click', () => { demoStop(); if (D.anim) return; D.built = 0; D.cur = -1; renderDemo(); demoCaption(); D.playing = true; D.timer = setTimeout(demoStep, 600); });
+$('#d-step').addEventListener('click', () => { demoStop(); demoStep(); });
+$('#d-full').addEventListener('click', () => { demoStop(); if (D.anim) return; D.built = D.g.E.length; D.cur = -1; renderDemo(); demoCaption(); });
+$('#d-type').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || D.anim) return; demoStop();
+  D.g = b.dataset.v === '1' ? EX.ex4() : EX.ex1(); D.built = D.g.E.length; D.cur = -1;
+  $('#d-type').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  renderDemo(); demoCaption();
+});
+$('#d-ver').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; D.ver = +b.dataset.v;
+  $('#d-ver').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  renderDemo(); demoCaption();
+});
+
+/* ================= 2. LABORATÓRIO ================= */
+const L = { g:null, ver:1, sel:-1, del:false, flash:[] };
+const lRoot = { el:$('#lab'), svg:$('#l-svg'), inc:$('#l-inc'), adj:$('#l-adj'), busy:() => drag && drag.moved };
+link(lRoot, () => L.g, () => L.ver);
+const scaleTo = (g, W, H, pad = 40) => {
+  if (!g.V.length) return g;
+  const xs = g.V.map(v => v.x), ys = g.V.map(v => v.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const s = Math.min((W - 2*pad)/Math.max(1, x1 - x0), (H - 2*pad)/Math.max(1, y1 - y0), 1.25);
+  const ox = (W - (x1 - x0)*s)/2, oy = (H - (y1 - y0)*s)/2;
+  g.V.forEach(v => { v.x = ox + (v.x - x0)*s; v.y = oy + (v.y - y0)*s; });
+  return g;
+};
+function relabel(g){ g.V.forEach((v, i) => { v.name = vName(i); }); g.E.forEach((e, j) => { e.name = 'a' + (j + 1); }); }
+function loadPreset(k){
+  let g;
+  if (k === 'empty') g = { directed:L.g ? L.g.directed : false, V:[], E:[] };
+  else if (k === 'rnd'){
+    const n = 4 + Math.floor(Math.random()*3), dir = L.g ? L.g.directed : false;
+    const pts = Array.from({ length:n }, (_, i) => [280 + 150*Math.cos(i/n*2*Math.PI - Math.PI/2), 200 + 150*Math.sin(i/n*2*Math.PI - Math.PI/2)]);
+    const E = []; const want = n + Math.floor(Math.random()*n);
+    let guard = 0;
+    while (E.length < want && guard++ < 200){
+      const s = Math.floor(Math.random()*n), t = Math.floor(Math.random()*n);
+      if (s === t || E.some(([a, b]) => (a === s && b === t) || (!dir && a === t && b === s))) continue;
+      E.push([s, t]);
+    }
+    g = mk(dir, pts, E);
+  } else g = scaleTo(EX[k](), 560, 400, 60);
+  L.g = g; L.sel = -1; renderLab();
+}
+function renderLab(){
+  const g = L.g, n = g.V.length;
+  $('#l-type').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === (g.directed ? 1 : 0))));
+  $('#l-ver').hidden = !g.directed;
+  $('#l-ver').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === L.ver)));
+  renderGraph($('#l-svg'), g, { vcls:(v, i) => i === L.sel ? 'sel' : '' });
+  $('#l-canvas').classList.toggle('del-mode', L.del);
+  const rows = g.V.map(v => v.name), fl = L.flash;
+  const I = incM(g), A = adjM(g, L.ver);
+  $('#l-inc').innerHTML = n && g.E.length
+    ? mxHtml({ kind:'inc', rows, cols:g.E.map(e => e.name), M:I, directed:g.directed, ...sumsFor('inc', g, I, L.ver), cls:r => fl.includes(r) ? 'flash' : '' })
+    : '<p class="hint-line">A matriz de incidência aparece quando houver pelo menos uma aresta.</p>';
+  $('#l-adj').innerHTML = n
+    ? mxHtml({ kind:'adj', rows, cols:rows, M:A, directed:g.directed, edit:true, ...sumsFor('adj', g, A, L.ver), cls:(r, c) => fl.includes(r) || fl.includes(c) ? 'flash' : '' })
+    : '<p class="hint-line">Crie vértices clicando no quadro.</p>';
+  $('#l-inc-dim').textContent = `${n} × ${g.E.length}`;
+  $('#l-adj-dim').textContent = `${n} × ${n}`;
+  L.flash = [];
+  // avisos
+  const notes = [];
+  const multi = A.some(r => r.some(x => typeof x === 'number' && x > 1));
+  if (multi) notes.push('Há arestas paralelas: a adjacência só registra que os vértices estão ligados (o ponto laranja marca a célula com mais de uma aresta). Na incidência, cada aresta paralela tem sua própria coluna.');
+  if (A.some(r => r.includes('pm'))) notes.push('Na versão 2, arestas nos dois sentidos entre o mesmo par não cabem em uma célula (±1). A versão 1 não tem esse problema.');
+  const nb = $('#l-note'); nb.hidden = !notes.length; nb.className = 'note warn'; nb.textContent = notes.join(' ');
+  // graus
+  const dg = degrees(g);
+  $('#l-degs').innerHTML = dg.map((d, i) => `<span class="deg"><b>${lblHtml(g.V[i].name)}</b>${g.directed ? `<span class="ki">ent ${d.inn}</span> · <span class="ko">saí ${d.out}</span>` : `grau ${d.deg}`}</span>`).join('') || '<span class="hint-line">Sem vértices.</span>';
+  const tot = g.directed ? dg.reduce((s, d) => s + d.out, 0) : dg.reduce((s, d) => s + d.deg, 0);
+  $('#l-sum').textContent = g.directed ? `Σ entradas = Σ saídas = ${tot} = m` : `Σ graus = ${tot} = 2 × ${g.E.length} arestas`;
+  // seletores de troca
+  const opts = rows.map((r, i) => `<option value="${i}">${r}</option>`).join('');
+  const a = $('#l-sw1'), b = $('#l-sw2'), va = a.value, vb = b.value;
+  a.innerHTML = opts; b.innerHTML = opts;
+  a.value = va && +va < n ? va : '0'; b.value = vb && +vb < n ? vb : String(Math.min(1, n - 1));
+  // python
+  const pyM = M => '[\n' + M.map(r => '    [' + r.map(x => x === 'pm' ? 'None' : String(x)).join(', ') + ']').join(',\n') + '\n]';
+  $('#l-py').textContent = `# vértices na ordem: ${rows.join(', ') || '(nenhum)'}\n` +
+    `# matriz de adjacência${g.directed ? ` (dirigido, versão ${L.ver})` : ''}\nA = ${pyM(A)}\n\n` +
+    `# matriz de incidência (colunas: ${g.E.map(e => e.name).join(', ') || 'nenhuma'})\nM = ${pyM(I)}`;
+  $('#l-hint').textContent = L.del ? 'Modo apagar: clique em um vértice ou aresta para removê-lo.' : L.sel >= 0 ? `Agora clique no vértice de ${g.directed ? 'chegada' : 'destino'}. Clique de novo em ${g.V[L.sel].name} para cancelar.` : `${n} de 9 vértices. Clique no vazio para criar.`;
+}
+function svgPoint(svg, ev){ const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+let drag = null;
+const lsvg = $('#l-svg');
+lsvg.addEventListener('pointerdown', ev => {
+  const v = ev.target.closest('.g-v');
+  if (v){ const i = +v.dataset.v, p = svgPoint(lsvg, ev); drag = { i, x0:p.x, y0:p.y, ox:L.g.V[i].x, oy:L.g.V[i].y, moved:false }; try { lsvg.setPointerCapture(ev.pointerId); } catch (_) {} }
+});
+lsvg.addEventListener('pointermove', ev => {
+  if (!drag) return; const p = svgPoint(lsvg, ev);
+  if (!drag.moved && Math.hypot(p.x - drag.x0, p.y - drag.y0) < 5) return;
+  drag.moved = true;
+  const v = L.g.V[drag.i]; v.x = Math.max(R, Math.min(560 - R, drag.ox + p.x - drag.x0)); v.y = Math.max(R, Math.min(400 - R, drag.oy + p.y - drag.y0));
+  renderGraph(lsvg, L.g, { vcls:(vv, i) => i === L.sel ? 'sel' : '' });
+});
+lsvg.addEventListener('pointerup', ev => {
+  const g = L.g;
+  if (drag){
+    const d = drag; drag = null;
+    if (d.moved) return;
+    const i = d.i;
+    if (L.del){ g.V.splice(i, 1); g.E = g.E.filter(e => e.s !== i && e.t !== i).map(e => ({ ...e, s:e.s > i ? e.s - 1 : e.s, t:e.t > i ? e.t - 1 : e.t })); relabel(g); L.sel = -1; renderLab(); return; }
+    if (L.sel < 0) L.sel = i;
+    else if (L.sel === i) L.sel = -1;
+    else { g.E.push({ s:L.sel, t:i, name:'' }); relabel(g); L.sel = -1; }
+    renderLab(); return;
+  }
+  const e = ev.target.closest('.ge');
+  if (e){ if (L.del){ g.E.splice(+e.dataset.e, 1); relabel(g); renderLab(); } return; }
+  if (L.del) return;
+  if (L.sel >= 0){ L.sel = -1; renderLab(); return; }
+  if (g.V.length >= 9){ $('#l-hint').textContent = 'Limite de 9 vértices atingido.'; return; }
+  const p = svgPoint(lsvg, ev);
+  g.V.push({ name:'', x:Math.max(R, Math.min(560 - R, p.x)), y:Math.max(R, Math.min(400 - R, p.y)) }); relabel(g); renderLab();
+});
+$('#l-adj').addEventListener('click', ev => {
+  const td = ev.target.closest('td[data-r]'); if (!td) return;
+  const r = +td.dataset.r, c = +td.dataset.c, g = L.g;
+  if (r === c){ $('#l-hint').textContent = 'A diagonal representaria um laço. Este laboratório trabalha sem laços, como nas definições de incidência.'; return; }
+  const match = e => g.directed ? (e.s === r && e.t === c) : ((e.s === r && e.t === c) || (e.s === c && e.t === r));
+  if (g.E.some(match)) g.E = g.E.filter(e => !match(e)); else g.E.push({ s:r, t:c, name:'' });
+  relabel(g); renderLab();
+});
+$('#l-type').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  L.g.directed = b.dataset.v === '1'; renderLab();
+});
+$('#l-ver').addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; L.ver = +b.dataset.v; renderLab(); });
+$('#l-preset').addEventListener('change', ev => { if (ev.target.value) loadPreset(ev.target.value); ev.target.value = ''; });
+$('#l-clear').addEventListener('click', () => loadPreset('empty'));
+$('#l-del').addEventListener('click', ev => { L.del = !L.del; L.sel = -1; ev.currentTarget.classList.toggle('on', L.del); ev.currentTarget.setAttribute('aria-pressed', String(L.del)); renderLab(); });
+$('#l-swap').addEventListener('click', () => {
+  const i = +$('#l-sw1').value, j = +$('#l-sw2').value, g = L.g; if (i === j || !g.V[i] || !g.V[j]) return;
+  [g.V[i], g.V[j]] = [g.V[j], g.V[i]];
+  g.E.forEach(e => { e.s = e.s === i ? j : e.s === j ? i : e.s; e.t = e.t === i ? j : e.t === j ? i : e.t; });
+  relabel(g); L.flash = [i, j]; renderLab();
+});
+$('#l-copy').addEventListener('click', ev => {
+  const btn = ev.currentTarget, txt = $('#l-py').textContent;
+  const ok = () => { btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1400); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#l-py')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selecionado: use Ctrl+C'; setTimeout(() => { btn.textContent = 'Copiar'; }, 2200); };
+  try { navigator.clipboard.writeText(txt).then(ok, fallback); } catch (_) { fallback(); }
+});
+
+/* ================= 3A. Desenhe o grafo ================= */
+const ring = (n, cx, cy, r) => Array.from({ length:n }, (_, i) => ({ name:vName(i), x:cx + r*Math.cos(i/n*2*Math.PI - Math.PI/2), y:cy + r*Math.sin(i/n*2*Math.PI - Math.PI/2) }));
+const DX = [
+  { tab:'1', title:'Incidência → desenho', kind:'inc', directed:false, n:5, desc:'Matriz do Exercício 01 dos slides. Cada coluna diz quais dois vértices a aresta liga.',
+    edges:[[0,2],[1,3],[0,1],[2,4]] },
+  { tab:'2', title:'Adjacência → desenho', kind:'adj', directed:false, n:5, desc:'Cada 1 acima da diagonal é uma aresta (abaixo é o espelho, porque a matriz é simétrica).',
+    edges:[[0,1],[0,2],[0,4],[1,4],[2,3],[3,4]] },
+  { tab:'3', title:'Adjacência dirigida → desenho', kind:'adj', directed:true, n:4, desc:'Versão 1: um 1 na linha v<sub>j</sub>, coluna v<sub>k</sub> é uma aresta de v<sub>j</sub> para v<sub>k</sub>.',
+    edges:[[0,1],[1,3],[2,0],[3,2]] },
+  { tab:'4', title:'Incidência dirigida → desenho', kind:'inc', directed:true, n:4, desc:'Em cada coluna, o 1 marca a saída e o −1 marca a chegada. Repare no vértice que não aparece em nenhuma coluna.',
+    edges:[[0,1],[2,0],[1,0],[1,2]] },
+];
+let dx = 0; const dxState = DX.map(() => ({ edges:[], checked:false }));
+let dxSel = -1;
+const dxTabs = $('#dx-tabs');
+DX.forEach((x, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Exercício ' + x.tab; b.addEventListener('click', () => { dx = i; dxSel = -1; renderDX(); }); dxTabs.appendChild(b); });
+const keyOf = (dir, s, t) => dir ? `${s}>${t}` : `${Math.min(s, t)}-${Math.max(s, t)}`;
+function dxGraph(x, edges){ return { directed:x.directed, V:ring(x.n, 180, 152, 112), E:edges.map(([s, t]) => ({ s, t, name:'' })) }; }
+function renderDX(){
+  const x = DX[dx], st = dxState[dx];
+  dxTabs.querySelectorAll('button').forEach((b, i) => { b.setAttribute('aria-pressed', String(i === dx)); b.className = itemTag('dx' + i); });
+  $('#dx-title').textContent = x.title; $('#dx-desc').innerHTML = x.desc;
+  const ans = dxGraph(x, x.edges), rows = ans.V.map(v => v.name);
+  if (x.kind === 'inc'){ ans.E.forEach((e, j) => { e.name = 'a' + (j + 1); }); $('#dx-mx').innerHTML = mxHtml({ kind:'inc', rows, cols:ans.E.map(e => e.name), M:incM(ans), directed:x.directed }); $('#dx-dim').textContent = `${x.n} × ${x.edges.length}`; }
+  else { $('#dx-mx').innerHTML = mxHtml({ kind:'adj', rows, cols:rows, M:adjM(ans, 1), directed:x.directed }); $('#dx-dim').textContent = `${x.n} × ${x.n}`; }
+  const g = dxGraph(x, st.edges);
+  const ansKeys = new Set(x.edges.map(([s, t]) => keyOf(x.directed, s, t)));
+  const myKeys = new Set(st.edges.map(([s, t]) => keyOf(x.directed, s, t)));
+  const extra = st.checked ? x.edges.filter(([s, t]) => !myKeys.has(keyOf(x.directed, s, t))).map(([s, t]) => ({ e:{ s, t, name:'' }, cls:'miss' })) : [];
+  renderGraph($('#dx-svg'), g, { labels:false, extra,
+    ecls:e => st.checked ? (ansKeys.has(keyOf(x.directed, e.s, e.t)) ? 'ok' : 'bad') : '',
+    vcls:(v, i) => i === dxSel ? 'sel' : '' });
+}
+function dxFeedback(msg, kind){ const f = $('#dx-fb'); f.className = 'fb' + (kind ? ' ' + kind : ''); f.innerHTML = msg; }
+$('#dx-svg').addEventListener('click', ev => {
+  const x = DX[dx], st = dxState[dx];
+  const v = ev.target.closest('.g-v'), e = ev.target.closest('.ge');
+  if (v){
+    const i = +v.dataset.v;
+    if (dxSel < 0) dxSel = i;
+    else if (dxSel === i) dxSel = -1;
+    else {
+      const k = keyOf(x.directed, dxSel, i), idx = st.edges.findIndex(([s, t]) => keyOf(x.directed, s, t) === k);
+      if (idx >= 0) st.edges.splice(idx, 1); else st.edges.push([dxSel, i]);
+      dxSel = -1; st.checked = false; dxFeedback(`${st.edges.length} ${st.edges.length === 1 ? 'aresta desenhada' : 'arestas desenhadas'}.`);
+    }
+    renderDX(); return;
+  }
+  if (e && e.dataset.e !== undefined){ st.edges.splice(+e.dataset.e, 1); st.checked = false; dxFeedback(`${st.edges.length} arestas desenhadas.`); renderDX(); return; }
+  dxSel = -1; renderDX();
+});
+$('#dx-check').addEventListener('click', () => {
+  const x = DX[dx], st = dxState[dx]; st.checked = true;
+  const ans = new Set(x.edges.map(([s, t]) => keyOf(x.directed, s, t))), mine = st.edges.map(([s, t]) => keyOf(x.directed, s, t));
+  const wrong = mine.filter(k => !ans.has(k)).length, miss = [...ans].filter(k => !mine.includes(k)).length;
+  renderDX();
+  if (!wrong && !miss){ const got = solve('dx' + dx); renderDX(); dxFeedback('<b>Correto!</b> O desenho corresponde exatamente à matriz.' + ptMsg('dx' + dx, got), 'ok'); }
+  else dxFeedback(`<b>Ainda não.</b> ${wrong ? `${wrong} ${wrong === 1 ? 'aresta não existe' : 'arestas não existem'} na matriz (em vermelho). ` : ''}${miss ? `Faltam ${miss} (tracejadas).` : ''}${x.directed && wrong ? ' Confira também o sentido das setas.' : ''}`, 'bad');
+});
+$('#dx-show').addEventListener('click', () => { reveal('dx' + dx); const st = dxState[dx]; st.edges = DX[dx].edges.map(e => [...e]); st.checked = true; renderDX(); dxFeedback('Esta é a resposta. Compare com a matriz: cada aresta corresponde a uma coluna (incidência) ou a um 1 (adjacência).'); });
+$('#dx-clear').addEventListener('click', () => { dxState[dx] = { edges:[], checked:false }; dxSel = -1; renderDX(); dxFeedback('Nenhuma aresta desenhada ainda.'); });
+
+/* ================= 3B. Preencha a matriz ================= */
+const FX = [
+  { tab:'Grafo 1', src:'Adaptado de Nicoletti & Hruschka Jr (2018). Repare nas duas arestas entre v₁ e v₂.',
+    g:() => { const V = [['v1',90,50],['v2',90,190],['v3',330,265],['v4',330,190],['v5',330,50]].map(([name, x, y]) => ({ name, x, y }));
+      return { directed:false, V, E:[[0,4],[0,1],[0,1],[4,3],[1,3],[1,2],[3,2]].map(([s, t], j) => ({ s, t, name:'e' + (j + 1) })) }; } },
+  { tab:'Grafo 2', src:'Grafo dirigido adaptado de Wikiwand, "Grafo orientado". Linhas na ordem crescente dos rótulos.',
+    g:() => { const pos = { 5:[60,40], 7:[200,40], 3:[340,40], 11:[60,150], 8:[200,150], 2:[60,262], 9:[200,262], 10:[340,262] };
+      const order = [2, 3, 5, 7, 8, 9, 10, 11];
+      const V = order.map(k => ({ name:String(k), x:pos[k][0], y:pos[k][1] }));
+      const ix = k => order.indexOf(k);
+      return { directed:true, V, E:[[5,11],[7,11],[7,8],[3,8],[3,10],[11,2],[11,9],[11,10],[8,9]].map(([s, t], j) => ({ s:ix(s), t:ix(t), name:'a' + (j + 1) })) }; } },
+];
+let fx = 0, fxKind = 'inc'; const fxState = FX.map(() => ({ inc:null, adj:null, checked:{ inc:false, adj:false } }));
+const fxTabs = $('#fx-tabs');
+FX.forEach((x, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = x.tab; b.addEventListener('click', () => { fx = i; renderFX(); }); fxTabs.appendChild(b); });
+function fxAnswer(){ const g = FX[fx].g(); return fxKind === 'inc' ? incM(g) : adjM(g, 1); }
+function fxCycle(g){ if (fxKind === 'inc') return g.directed ? [0, 1, -1] : [0, 1]; return g.directed ? [0, 1] : [0, 1, 2]; }
+function renderFX(){
+  const x = FX[fx], g = x.g(), st = fxState[fx], ans = fxAnswer();
+  fxTabs.querySelectorAll('button').forEach((b, i) => { b.setAttribute('aria-pressed', String(i === fx)); b.className = ST.solved.includes(`fx${i}-inc`) && ST.solved.includes(`fx${i}-adj`) ? 'tabdone' : ''; });
+  $('#fx-kind').querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.v === fxKind)); b.className = itemTag(`fx${fx}-${b.dataset.v}`); });
+  renderGraph($('#fx-svg'), g, {});
+  $('#fx-src').textContent = x.src;
+  if (!st[fxKind]) st[fxKind] = ans.map(r => r.map(() => 0));
+  const M = st[fxKind], chk = st.checked[fxKind];
+  const rows = g.V.map(v => v.name), cols = fxKind === 'inc' ? g.E.map(e => e.name) : rows;
+  $('#fx-title').innerHTML = fxKind === 'inc' ? '<span class="ke">Matriz de incidência</span>' : `<span class="kv">Matriz de adjacência</span>${g.directed ? ' (versão 1)' : ''}`;
+  $('#fx-dim').textContent = `${rows.length} × ${cols.length}`;
+  $('#fx-mx').innerHTML = mxHtml({ kind:fxKind, rows, cols, M, directed:g.directed, edit:true,
+    cls:(r, c) => chk ? (okCell(M[r][c], ans[r][c]) ? 'right' : 'wrong') : '' });
+  if (!chk){ const f = $('#fx-fb'); f.className = 'fb'; f.innerHTML = fxKind === 'inc' ? (g.directed ? 'Para cada aresta (coluna), marque 1 no vértice de saída e −1 no de chegada.' : 'Para cada aresta (coluna), marque 1 nos dois vértices que ela liga.') : (g.directed ? 'Marque 1 na linha de origem e coluna de destino de cada aresta.' : 'Marque 1 nas duas células simétricas de cada par ligado.'); }
+}
+const okCell = (v, a) => v === a || (a > 1 && v === 1);
+$('#fx-mx').addEventListener('click', ev => {
+  const td = ev.target.closest('td[data-r]'); if (!td) return;
+  const g = FX[fx].g(), st = fxState[fx], M = st[fxKind], cyc = fxCycle(g);
+  const r = +td.dataset.r, c = +td.dataset.c;
+  M[r][c] = cyc[(cyc.indexOf(M[r][c]) + 1) % cyc.length]; st.checked[fxKind] = false; renderFX();
+});
+$('#fx-kind').addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; fxKind = b.dataset.v; renderFX(); });
+$('#fx-check').addEventListener('click', () => {
+  const st = fxState[fx], M = st[fxKind], ans = fxAnswer(); st.checked[fxKind] = true; renderFX();
+  let wrong = 0, total = 0; ans.forEach((r, i) => r.forEach((a, j) => { total++; if (!okCell(M[i][j], a)) wrong++; }));
+  const f = $('#fx-fb');
+  if (!wrong){ const id = `fx${fx}-${fxKind}`, got = solve(id); renderFX(); f.className = 'fb ok'; f.innerHTML = `<b>Correto!</b> Todas as ${total} células conferem.${ptMsg(id, got)}${FX[fx].g().directed ? '' : fxKind === 'adj' ? ' As duas arestas entre v₁ e v₂ viram um único 1 (ou 2, se você contar as arestas): a adjacência não distingue arestas paralelas.' : ' Repare que as colunas e₂ e e₃ são iguais: são as arestas paralelas.'}`; }
+  else { f.className = 'fb bad'; f.innerHTML = `<b>${wrong} ${wrong === 1 ? 'célula errada' : 'células erradas'}</b> de ${total}, marcadas em vermelho.`; }
+});
+$('#fx-show').addEventListener('click', () => { reveal(`fx${fx}-${fxKind}`); const st = fxState[fx]; st[fxKind] = fxAnswer(); st.checked[fxKind] = true; renderFX(); const f = $('#fx-fb'); f.className = 'fb'; f.innerHTML = 'Esta é a resposta. Passe para a outra matriz e tente sozinho.'; });
+$('#fx-clear').addEventListener('click', () => { const st = fxState[fx]; st[fxKind] = null; st.checked[fxKind] = false; renderFX(); });
+
+/* ================= 3C. Graus pela matriz ================= */
+let GX = null, gxOk = false;
+function newGX(rng = Math.random){
+  gxOk = false;
+  const n = 5, E = []; const want = 6 + Math.floor(rng()*3); let guard = 0;
+  while (E.length < want && guard++ < 300){ const s = Math.floor(rng()*n), t = Math.floor(rng()*n); if (s === t || E.some(([a, b]) => a === s && b === t)) continue; E.push([s, t]); }
+  GX = { directed:true, V:ring(n, 180, 132, 98), E:E.map(([s, t]) => ({ s, t, name:'' })) };
+  const rows = GX.V.map(v => v.name);
+  $('#gx-mx').innerHTML = mxHtml({ kind:'adj', rows, cols:rows, M:adjM(GX, 1), directed:true });
+  $('#gx-table').innerHTML = `<thead><tr><th>vértice</th><th class="ki">entrada</th><th class="ko">saída</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${lblHtml(r)}</td><td><input id="gx-in-${i}" inputmode="numeric" aria-label="grau de entrada de ${r}"></td><td><input id="gx-out-${i}" inputmode="numeric" aria-label="grau de saída de ${r}"></td></tr>`).join('')}</tbody>`;
+  $('#gx-fb').className = 'fb'; $('#gx-fb').textContent = 'Dica: some as linhas e as colunas.';
+  $('#gx-canvas').hidden = true; $('#gx-draw').textContent = 'Ver o grafo';
+}
+$('#gx-new').addEventListener('click', () => newGX());
+$('#gx-check').addEventListener('click', () => {
+  const dg = degrees(GX); let wrong = 0, empty = 0;
+  dg.forEach((d, i) => [['in', d.inn], ['out', d.out]].forEach(([k, v]) => {
+    const el = $(`#gx-${k}-${i}`), raw = el.value.trim();
+    if (raw === ''){ empty++; el.className = ''; return; }
+    const ok = +raw === v; el.className = ok ? 'ok' : 'bad'; if (!ok) wrong++;
+  }));
+  const f = $('#gx-fb');
+  if (empty){ f.className = 'fb'; f.textContent = `Faltam ${empty} campos.`; return; }
+  if (!wrong){ gxOk = true; const got = solve('gx'); f.className = 'fb ok'; f.innerHTML = `<b>Tudo certo!</b> A soma das entradas e a das saídas são iguais (${GX.E.length}), e as duas valem o número de arestas.${ptMsg('gx', got)}`; }
+  else { f.className = 'fb bad'; f.innerHTML = `<b>${wrong} ${wrong === 1 ? 'valor errado' : 'valores errados'}.</b> Saída é a soma da linha; entrada é a soma da coluna.`; }
+});
+$('#gx-draw').addEventListener('click', ev => {
+  if (!gxOk){ const f = $('#gx-fb'); f.className = 'fb'; f.textContent = 'Acerte os graus desta matriz primeiro; depois o grafo pode ser mostrado.'; return; }
+  const c = $('#gx-canvas'); c.hidden = !c.hidden; ev.currentTarget.textContent = c.hidden ? 'Ver o grafo' : 'Esconder o grafo';
+  if (!c.hidden) renderGraph($('#gx-svg'), GX, { labels:false });
+});
+
+/* ================= 4. Quiz ================= */
+const Q = [
+  { q:'Um grafo não dirigido, sem laços, tem 6 vértices e 9 arestas. Qual é a dimensão da sua matriz de incidência?',
+    o:['6 × 9', '9 × 6', '6 × 6', '9 × 9'], a:0, w:'Linhas são vértices (n = 6) e colunas são arestas (m = 9): n × m = 6 × 9.' },
+  { q:'Nessa mesma matriz de incidência, quantos 1 existem no total?',
+    o:['9', '18', '36', '54'], a:1, w:'Cada aresta incide em exatamente dois vértices, então cada uma das 9 colunas tem dois 1: 2 × 9 = 18. É o mesmo que a soma dos graus.' },
+  { q:'Em um grafo não dirigido, a matriz de adjacência é sempre…',
+    o:['simétrica em relação à diagonal principal', 'triangular superior', 'diagonal', 'a matriz identidade'], a:0,
+    w:'Se v<sub>j</sub> é ligado a v<sub>k</sub>, então v<sub>k</sub> é ligado a v<sub>j</sub>: e<sub>jk</sub> = e<sub>kj</sub>. Por isso, no código, basta guardar metade da matriz.' },
+  { q:'Na matriz de incidência de um grafo dirigido, quanto vale a soma de cada coluna?',
+    o:['0', '1', '2', 'o grau do vértice'], a:0, w:'Cada coluna tem um 1 (saída) e um −1 (chegada): 1 + (−1) = 0.' },
+  { q:'Na matriz de adjacência (versão 1) de um grafo dirigido, a soma da coluna de v<sub>k</sub> é…',
+    o:['o grau de entrada de v<sub>k</sub>', 'o grau de saída de v<sub>k</sub>', 'o grau total de v<sub>k</sub>', 'o número de arestas do grafo'], a:0,
+    w:'Cada 1 na coluna k representa uma aresta que chega em v<sub>k</sub>. A soma da linha dá o grau de saída.' },
+  { q:'Na adjacência (versão 1) de um grafo dirigido, a linha de v<sub>3</sub> tem só zeros. O que se pode concluir?',
+    o:['v<sub>3</sub> não tem arestas saindo, mas pode receber arestas', 'v<sub>3</sub> é um vértice isolado', 'a matriz está errada', 'v<sub>3</sub> tem um laço'], a:0,
+    w:'A linha registra só as saídas. Para saber se v<sub>3</sub> é isolado, é preciso olhar também a coluna de v<sub>3</sub>.' },
+  { q:'Existem duas arestas paralelas entre v<sub>1</sub> e v<sub>2</sub>. Qual matriz consegue distinguir as duas?',
+    o:['A incidência: cada aresta tem a sua coluna', 'A adjacência com 0 e 1', 'Nenhuma das duas', 'As duas, sem diferença'], a:0,
+    w:'Na incidência aparecem duas colunas iguais. Na adjacência 0/1 o par só fica marcado como ligado; alguns livros escrevem a quantidade (2) na célula para não perder a informação.' },
+  { q:'Trocamos as linhas 2 e 4 e também as colunas 2 e 4 de uma matriz de adjacência. A nova matriz representa…',
+    o:['o mesmo grafo com os rótulos v<sub>2</sub> e v<sub>4</sub> trocados (um grafo isomorfo)', 'um grafo diferente, não isomorfo', 'uma matriz inválida', 'o complemento do grafo'], a:0,
+    w:'Permutar linhas e as colunas correspondentes só renomeia vértices. Experimente com "Trocar rótulos" no laboratório.' },
+  { q:'Um grafo tem 1 000 vértices e 3 000 arestas. Qual matriz ocupa menos células?',
+    o:['Adjacência: 1 000 × 1 000 = 1 milhão', 'Incidência: 1 000 × 3 000 = 3 milhões', 'As duas têm o mesmo tamanho', 'Depende de o grafo ser dirigido'], a:0,
+    w:'n² = 10⁶ contra n · m = 3 · 10⁶. Em grafos com muitas arestas por vértice a incidência cresce depressa; em grafos esparsos, uma lista de adjacência é ainda menor.' },
+  { q:'Na adjacência versão 2 de um grafo dirigido, e<sub>jk</sub> = −1 significa que…',
+    o:['existe uma aresta de v<sub>k</sub> para v<sub>j</sub>', 'existe uma aresta de v<sub>j</sub> para v<sub>k</sub>', 'não existe aresta entre eles', 'existe um laço em v<sub>j</sub>'], a:0,
+    w:'O −1 marca chegada em v<sub>j</sub>. A mesma aresta aparece como 1 na célula (k, j).' },
+  { q:'Por que a diagonal principal da matriz de adjacência de um grafo simples é toda zero?',
+    o:['Porque um grafo simples não tem laços', 'Porque todo vértice tem grau zero', 'Porque a matriz é simétrica', 'Por convenção, sem motivo'], a:0,
+    w:'A célula (j, j) indicaria uma aresta de v<sub>j</sub> para ele mesmo, ou seja, um laço.' },
+  { q:'Na matriz de incidência de um grafo não dirigido, uma linha tem quatro 1. Isso indica…',
+    o:['um vértice de grau 4', 'uma aresta que liga quatro vértices', 'quatro laços', 'um erro: cada linha tem exatamente dois 1'], a:0,
+    w:'A soma da linha é o grau do vértice. Quem tem exatamente dois 1 é cada coluna, não cada linha.' },
+];
+// embaralha as alternativas com a semente deste navegador (a mesma ordem ao recarregar)
+{ const rng = mulberry32(ST.seed);
+  Q.forEach(q => { q.orig = q.a; const idx = q.o.map((_, i) => i); for (let i = idx.length - 1; i > 0; i--){ const j = Math.floor(rng()*(i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; } q.o = idx.map(i => q.o[i]); q.a = idx.indexOf(q.a); q.perm = idx; }); }
+function markQ(card, i){
+  const q = Q[i], orig = ST.quiz[i]; if (orig === undefined) return;
+  const k = q.perm.indexOf(orig);
+  card.querySelectorAll('.opts button').forEach(x => { x.disabled = true; if (+x.dataset.k === q.a) x.classList.add('right'); if (+x.dataset.k === k && k !== q.a) x.classList.add('wrong'); });
+  const w = card.querySelector('.why'); w.hidden = false; w.className = 'why' + (k === q.a ? '' : ' miss');
+  w.innerHTML = `<b>${k === q.a ? 'Correto. +1 ponto.' : 'Não é essa.'}</b> ${q.w}`;
+}
+function renderQuiz(){
+  $('#quiz').innerHTML = Q.map((q, i) => `<div class="card q" data-q="${i}"><span class="qn">QUESTÃO ${i + 1}</span><h4>${q.q}</h4><div class="opts">${q.o.map((o, k) => `<button type="button" data-k="${k}">${String.fromCharCode(97 + k)}) ${o}</button>`).join('')}</div><div class="why" hidden></div></div>`).join('');
+  $('#quiz').querySelectorAll('.q').forEach(card => markQ(card, +card.dataset.q));
+  updScore();
+}
+function updScore(){
+  const done = Q.filter((_, i) => ST.quiz[i] !== undefined).length, right = Q.filter((q, i) => ST.quiz[i] === q.orig).length;
+  $('#q-score').textContent = done ? `${right} de ${done} corretas · ${Q.length - done} restantes` : `0 de ${Q.length} respondidas`;
+  $('#q-bar').style.width = (right/Q.length*100) + '%';
+}
+$('#quiz').addEventListener('click', ev => {
+  const b = ev.target.closest('.opts button'); if (!b || b.disabled) return;
+  const card = b.closest('.q'), i = +card.dataset.q;
+  if (ST.quiz[i] !== undefined) return;
+  touch(); ST.quiz[i] = Q[i].perm[+b.dataset.k]; saveState();
+  markQ(card, i); updScore(); updPts();
+});
+
+/* ================= Pontos e envio ================= */
+const MAXP = () => Q.length + FX.length*2 + 1;
+const score = () => ST.solved.filter(id => !id.startsWith('dx')).length + Q.filter((q, i) => ST.quiz[i] === q.orig).length;
+function updPts(){ const p = score(), m = MAXP(); $('#pts').textContent = `${p} / ${m} pontos`; $('#pbar').style.width = (p/m*100) + '%'; }
+const who = $('#who'), mat = $('#mat'), sendp = $('#sendp');
+who.value = ST.nome || ''; mat.value = ST.mat || '';
+who.addEventListener('input', () => { ST.nome = who.value; who.classList.remove('need'); saveState(); });
+mat.addEventListener('input', () => { ST.mat = mat.value; saveState(); });
+function panel(html, kind = ''){ sendp.hidden = false; sendp.className = 'wrap send-panel' + (kind ? ' ' + kind : ''); sendp.innerHTML = html; }
+const closeBtn = '<button class="btn" type="button" data-act="close">Fechar</button>';
+$('#send').addEventListener('click', () => {
+  const nome = who.value.trim();
+  if (!CONFIGURED){ panel(`<span><b>O envio ainda não foi configurado pelo professor.</b> Continue os exercícios: sua pontuação fica salva neste navegador.</span>${closeBtn}`, 'bad'); return; }
+  if (!gateOpen){ panel(`<span><b>Os exercícios que valem ponto ainda não foram liberados.</b> Aguarde o professor liberar e faça as partes B e C e o quiz antes de enviar.</span>${closeBtn}`, 'bad'); return; }
+  if (nome.length < 3){ who.classList.add('need'); who.focus(); panel(`<span><b>Falta o seu nome.</b> Digite seu nome completo no campo acima antes de enviar.</span>${closeBtn}`, 'bad'); return; }
+  panel(`<span>Enviar <b>${score()} de ${MAXP()} pontos</b> em nome de <b>${esc(nome)}</b>${mat.value.trim() ? ` (matrícula ${esc(mat.value.trim())})` : ''}? Você pode enviar de novo depois: vale o melhor resultado.</span><div class="row"><button class="btn btn-primary" type="button" data-act="ok">Confirmar envio</button><button class="btn" type="button" data-act="close">Cancelar</button></div>`);
+});
+sendp.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if (!b) return;
+  if (b.dataset.act === 'close'){ sendp.hidden = true; return; }
+  if (b.dataset.act === 'ok') doSend();
+});
+async function doSend(){
+  const payload = {
+    sid:uuid(), aluno:ST.aluno, nome:who.value.trim(), matricula:mat.value.trim(), turma:TURMA,
+    pontos:score(), max:MAXP(), tempo:ST.start ? Math.round((Date.now() - ST.start)/1000) : 0, rodada:ST.rodada,
+    itens:{ resolvidos:ST.solved.filter(id => !id.startsWith('dx')), revelados:ST.revealed.filter(id => !id.startsWith('dx')), quiz:Q.map((q, i) => ST.quiz[i] === undefined ? null : ST.quiz[i] === q.orig) },
+  };
+  const body = JSON.stringify(payload), pts = payload.pontos;
+  panel('<span>Enviando…</span>');
+  let res = null;
+  try {
+    const r = await fetch(SCRIPT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body });
+    res = await r.json();
+  } catch (_) {
+    try {
+      await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body });
+      panel(`<span><b>Enviado.</b> ${pts} pontos. O servidor não devolveu confirmação; se seu nome não aparecer no ranking, envie de novo.</span>${closeBtn}`, 'ok');
+    } catch (__){
+      panel(`<span><b>Não foi possível enviar.</b> Verifique a conexão com a internet e tente de novo. Sua pontuação continua salva.</span>${closeBtn}`, 'bad');
+    }
+    return;
+  }
+  if (res && !res.ok && res.erro === 'rodada'){ applyRodada(res.rodada); return; }
+  if (res && !res.ok && res.erro === 'bloqueado'){ setGate(false); panel(`<span><b>Envios fechados.</b> O professor bloqueou os exercícios desta rodada, então não é possível enviar agora.</span>${closeBtn}`, 'bad'); return; }
+  if (res && res.ok) panel(`<span><b>Resultado enviado: ${pts} de ${payload.max} pontos.</b> Obrigado, ${esc(payload.nome.split(' ')[0])}!</span>${closeBtn}`, 'ok');
+  else panel(`<span><b>O servidor recusou o envio:</b> ${esc((res && res.erro) || 'erro desconhecido')}.</span>${closeBtn}`, 'bad');
+}
+
+/* ================= Rodadas ================= */
+function applyRodada(rod){
+  rod = Number(rod); if (!rod) return;
+  if (ST.rodada == null){ ST.rodada = rod; saveState(); return; }
+  if (ST.rodada === rod) return;
+  Object.assign(ST, { rodada:rod, seed:Math.floor(Math.random()*2147483647), start:null, solved:[], revealed:[], quiz:{} });
+  saveState();
+  try { sessionStorage.setItem('gm-nova-rodada', String(rod)); } catch (_) {}
+  location.reload();
+}
+let gateOpen = !CONFIGURED, syncT = null;
+function setGate(open){
+  const was = gateOpen; gateOpen = !!open;
+  ['prat', 'quiz'].forEach(k => { $('#gated-' + k).hidden = !gateOpen; $('#lock-' + k).hidden = gateOpen; });
+  if (gateOpen && !was){ touch(); renderFX(); }
+  const g = $('#rk-gate'), b = $('#rk-lib');
+  if (g){ g.textContent = gateOpen ? 'liberados' : 'bloqueados'; g.className = 'gate-state ' + (gateOpen ? 'on' : 'off'); b.textContent = gateOpen ? 'Bloquear exercícios' : 'Liberar exercícios'; b.className = 'btn' + (gateOpen ? '' : ' btn-primary'); }
+}
+function gateMsg(t){ document.querySelectorAll('.gate-msg').forEach(x => { x.textContent = t; }); }
+async function syncServer(){
+  clearTimeout(syncT);
+  if (!CONFIGURED) return;
+  try {
+    const r = await fetch(`${SCRIPT_URL}?acao=ping`); const j = await r.json();
+    if (j && j.ok){ applyRodada(j.rodada); setGate(j.liberado === true); gateMsg(''); }
+  } catch (_) { gateMsg('Sem conexão com o servidor no momento; tentando de novo.'); }
+  syncT = setTimeout(syncServer, (gateOpen ? 60000 : 20000) + Math.random()*4000);
+}
+try {
+  const nr = sessionStorage.getItem('gm-nova-rodada');
+  if (nr){ sessionStorage.removeItem('gm-nova-rodada'); panel(`<span><b>Nova rodada (${esc(nr)}).</b> O professor iniciou uma nova rodada: seu progresso foi zerado. Bom trabalho!</span>${closeBtn}`, 'ok'); }
+} catch (_) {}
+
+/* ================= Ranking (professor) ================= */
+let rkTimer = null;
+const fmtTempo = s => { s = Math.max(0, Math.round(Number(s) || 0)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60; return (h ? h + 'h' + String(m).padStart(2, '0') : m) + 'min' + String(x).padStart(2, '0') + 's'; };
+const fmtHora = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }); };
+function renderRanking(list){
+  const out = $('#rk-out');
+  if (!list.length){ out.innerHTML = '<p class="hint-line">Nenhum envio ainda.</p>'; return; }
+  const pod = [1, 0, 2].filter(i => list[i]).map(i => `<div class="pod p${i + 1}"><span class="pos">${i + 1}º</span><span class="nm">${esc(list[i].nome)}</span><span class="sc">${list[i].pontos} / ${list[i].max} · ${fmtTempo(list[i].tempo)}</span></div>`).join('');
+  out.innerHTML = `<div class="podium">${pod}</div><div class="mxwrap"><table class="rk"><thead><tr><th>#</th><th>Nome</th><th>Matrícula</th><th>Pontos</th><th>Tempo</th><th>Envios</th><th>Último envio</th></tr></thead><tbody>${
+    list.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${esc(r.nome)}</td><td class="n">${esc(r.matricula || '—')}</td><td class="n">${r.pontos} / ${r.max}</td><td class="n">${fmtTempo(r.tempo)}</td><td class="n">${r.envios}</td><td class="n">${fmtHora(r.ultimo)}</td></tr>`).join('')
+  }</tbody></table></div>`;
+}
+async function loadRanking(){
+  const key = $('#rk-key').value.trim(), st = $('#rk-status');
+  if (!key){ st.textContent = 'Digite a chave do professor.'; return; }
+  try { sessionStorage.setItem('gm-rk', key); } catch (_) {}
+  st.textContent = 'Carregando…';
+  const sel = $('#rk-rsel'), want = sel.value ? `&rodada=${encodeURIComponent(sel.value)}` : '';
+  try {
+    const r = await fetch(`${SCRIPT_URL}?acao=ranking&chave=${encodeURIComponent(key)}&turma=${encodeURIComponent(TURMA)}${want}`);
+    const j = await r.json();
+    if (!j.ok){ st.textContent = j.erro === 'chave' ? 'Chave incorreta.' : 'Erro do servidor: ' + j.erro; return; }
+    renderRanking(j.ranking || []);
+    if (typeof j.liberado === 'boolean') setGate(j.liberado);
+    if (j.rodadas){
+      $('#rk-rounds').hidden = false;
+      sel.innerHTML = j.rodadas.map(n => `<option value="${n}">${n}${n === j.atual ? ' (atual)' : ''}</option>`).join('');
+      sel.value = String(j.rodada);
+    }
+    st.textContent = `${j.rodada ? `Rodada ${j.rodada} · ` : ''}atualizado às ${new Date().toLocaleTimeString('pt-BR')} · ${(j.ranking || []).length} alunos`;
+  } catch (_) { st.textContent = 'Não foi possível ler o ranking. Confira a URL do script e a conexão.'; }
+}
+$('#rk-form').addEventListener('submit', ev => { ev.preventDefault(); loadRanking(); });
+$('#rk-rsel').addEventListener('change', loadRanking);
+$('#rk-lib').addEventListener('click', async ev => {
+  const b = ev.currentTarget, key = $('#rk-key').value.trim(), want = !gateOpen, st = $('#rk-status');
+  b.disabled = true; st.textContent = want ? 'Liberando…' : 'Bloqueando…';
+  try {
+    const r = await fetch(SCRIPT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify({ acao:'liberar', chave:key, liberado:want }) });
+    const j = await r.json();
+    if (!j.ok){ st.textContent = j.erro === 'chave' ? 'Chave incorreta.' : 'Erro do servidor: ' + j.erro; return; }
+    setGate(j.liberado);
+    st.textContent = j.liberado ? 'Exercícios liberados. Os alunos veem a liberação em até 20 segundos.' : 'Exercícios bloqueados. Novos envios serão recusados até você liberar de novo.';
+  } catch (_) { st.textContent = 'Não foi possível falar com o script. Confira se a implantação foi atualizada com o novo Codigo.gs.'; }
+  finally { b.disabled = false; }
+});
+const rkc = $('#rk-confirm');
+$('#rk-new').addEventListener('click', () => {
+  rkc.hidden = false;
+  rkc.innerHTML = '<p style="margin-bottom:8px"><b>Iniciar uma nova rodada?</b> O ranking passa a mostrar só os envios novos e os exercícios voltam a ficar bloqueados até você liberar. Os envios desta rodada continuam guardados na planilha e podem ser vistos escolhendo a rodada acima. Cada aluno começa do zero quando abrir ou recarregar a página; quem tentar enviar com a página antiga também é zerado.</p><div class="row"><button class="btn btn-primary" type="button" data-act="go">Iniciar nova rodada</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div>';
+});
+rkc.addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-act]'); if (!b) return;
+  if (b.dataset.act === 'cancel'){ rkc.hidden = true; return; }
+  const key = $('#rk-key').value.trim();
+  rkc.innerHTML = '<p>Iniciando…</p>';
+  try {
+    const r = await fetch(SCRIPT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify({ acao:'novaRodada', chave:key }) });
+    const j = await r.json();
+    if (!j.ok){ rkc.innerHTML = `<p>${j.erro === 'chave' ? 'Chave incorreta.' : 'Erro do servidor: ' + esc(j.erro)}</p>`; return; }
+    setGate(false); ST.rodada = j.rodada; saveState();
+    rkc.innerHTML = `<p><b>Rodada ${j.rodada} iniciada, com os exercícios bloqueados.</b> Clique em "Liberar exercícios" quando quiser começar. As páginas dos alunos se atualizam sozinhas em até um minuto.</p>`;
+    $('#rk-rsel').innerHTML = `<option value="${j.rodada}">${j.rodada}</option>`; $('#rk-rsel').value = String(j.rodada);
+    loadRanking();
+    setTimeout(() => { rkc.hidden = true; }, 6000);
+  } catch (_) { rkc.innerHTML = '<p>Não foi possível falar com o script. Confira se você atualizou a implantação com o novo Codigo.gs.</p>'; }
+});
+$('#rk-auto').addEventListener('change', ev => { clearInterval(rkTimer); if (ev.target.checked){ loadRanking(); rkTimer = setInterval(loadRanking, 20000); } });
+try { const k = sessionStorage.getItem('gm-rk'); if (k) $('#rk-key').value = k; } catch (_) {}
+if (!CONFIGURED){ $('#rk-card').hidden = true; $('#rk-setup').hidden = false; }
+
+/* ================= Teclado e início ================= */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && L.sel >= 0){ L.sel = -1; renderLab(); }
+});
+renderDemo(); demoCaption();
+L.g = scaleTo(EX.ex1(), 560, 400, 60); renderLab();
+renderDX(); renderFX(); newGX(mulberry32(ST.seed + 7)); renderQuiz(); updPts(); setGate(gateOpen); syncServer();
+})();
+</script>
+
+</body>
+</html>
