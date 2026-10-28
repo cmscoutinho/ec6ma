@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratório de Árvores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: o mesmo papel quadriculado de "Grafos em Matrizes" (mesma disciplina). Demonstração de inserção na ABB abre a página; depois anatomia, laboratório e exercícios. */
+:root{
+  --bg:#F2F2F7; --surface:#FCFCFE; --sunk:#E8E7F0; --ink:#1C1B2E; --muted:#5E5C75; --line:#D3D1DE; --dot:#C9C7D8;
+  --vtx:#2F54D4; --edge:#D2480F; --out:#15804A; --in:#C2255C;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Martian Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121220; --surface:#1A1A2B; --sunk:#0E0E19; --ink:#E7E6F2; --muted:#9C9AB4; --line:#2E2D45; --dot:#34334D;
+    --vtx:#7C98FF; --edge:#FF8A4C; --out:#4FD08C; --in:#FF6B9A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121220; --surface:#1A1A2B; --sunk:#0E0E19; --ink:#E7E6F2; --muted:#9C9AB4; --line:#2E2D45; --dot:#34334D;
+  --vtx:#7C98FF; --edge:#FF8A4C; --out:#4FD08C; --in:#FF6B9A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
+h1,h2,h3,h4{margin:0;text-wrap:balance}
+p{margin:0}
+a{color:var(--vtx)}
+.kv{color:var(--vtx);font-weight:600} .ke{color:var(--edge);font-weight:600}
+.ko{color:var(--out);font-weight:600} .ki{color:var(--in);font-weight:600}
+code{font-family:var(--f-mono);font-size:.84em}
+:focus-visible{outline:2px solid var(--vtx);outline-offset:2px}
+
+/* ---------- Cabeçalho ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);padding-block:clamp(28px,5vw,56px) 20px;align-items:end}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(2.1rem,5.4vw,4rem);line-height:1;letter-spacing:-.03em}
+h1 .v{color:var(--vtx)} h1 .e{color:var(--edge)}
+.lead{font-size:1.08rem;max-width:56ch}
+.hero-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hero-pair div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px}
+.hero-pair b{font-family:var(--f-display);font-size:.88rem;font-weight:500}
+.hero-pair span{font-size:.9rem;color:var(--muted);line-height:1.4}
+.hero-pair .dim{font-family:var(--f-mono);font-size:.74rem;color:var(--ink)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px 26px}
+nav.toc a{font-family:var(--f-mono);font-size:.74rem;color:var(--ink);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.toc a:hover{border-color:var(--ink)}
+
+/* ---------- Seções ---------- */
+section{padding-block:clamp(32px,5vw,56px);border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:8px;margin-bottom:24px;max-width:72ch}
+.sec-head .num{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+h2{font-family:var(--f-display);font-weight:500;font-size:clamp(1.35rem,2.8vw,2rem);line-height:1.15;letter-spacing:-.02em}
+.sec-head p{color:var(--muted)}
+h3.sub{font-family:var(--f-display);font-weight:500;font-size:1.1rem;margin:34px 0 6px}
+p.subp{color:var(--muted);font-size:.95rem;margin-bottom:14px;max-width:72ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.lbl{font-family:var(--f-mono);font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cardhead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;justify-content:space-between}
+.cardhead h4{font:500 .98rem var(--f-display)}
+.dim{font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
+.hint-line{font-size:.86rem;color:var(--muted)}
+
+/* ---------- Controles ---------- */
+button{font:inherit;color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:.9rem;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn-primary:hover{background:var(--vtx);border-color:var(--vtx)}
+.btn.danger:hover{border-color:var(--in);color:var(--in)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:var(--sunk)}
+.seg button{font-size:.84rem;font-weight:600;padding:5px 11px;border:0;border-radius:6px;background:transparent;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.spread{justify-content:space-between}
+select,input[type=text],input[type=number]{font:inherit;font-size:.9rem;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+input[type=number]{width:96px;font-family:var(--f-mono)}
+
+/* ---------- Árvore (SVG) ---------- */
+.canvas{position:relative;border-radius:8px;border:1px solid var(--line);background-color:var(--surface);background-image:radial-gradient(var(--dot) 1px,transparent 1.2px);background-size:20px 20px;overflow:hidden}
+.canvas svg{display:block;width:100%;height:auto;user-select:none;touch-action:manipulation}
+.te{stroke:var(--ink);stroke-width:2;transition:stroke .2s,opacity .4s}
+.te.gone{opacity:0}
+.te.hl{stroke:var(--vtx);stroke-width:3.2}
+.tn{cursor:pointer;transition:opacity .4s}
+.tn.gone{opacity:0;pointer-events:none}
+.slot line{pointer-events:none}
+.tn circle{fill:var(--surface);stroke:var(--ink);stroke-width:2;transition:fill .25s,stroke .25s,stroke-width .25s}
+.tn text{font:600 14px var(--f-body);fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s}
+.tn .tbadge{font:600 11px var(--f-mono);fill:var(--edge)}
+.tn.pop circle,.tn.pop text:not(.tbadge){animation:tpop .55s cubic-bezier(.3,1.6,.5,1);transform-box:fill-box;transform-origin:center}
+@keyframes tpop{from{transform:scale(.15)}to{transform:scale(1)}}
+.tn.hl circle{stroke:var(--vtx);stroke-width:3;fill:color-mix(in srgb,var(--vtx) 16%,var(--surface))}
+.tn.sub circle{stroke:var(--vtx);stroke-width:2.6;fill:color-mix(in srgb,var(--vtx) 10%,var(--surface))}
+.tn.path circle{stroke:var(--edge);stroke-width:3}
+.tn.found circle,.tn.succ circle{fill:var(--out);stroke:var(--out)} .tn.found text,.tn.succ text{fill:#fff}
+.tn.del circle{fill:var(--in);stroke:var(--in)} .tn.del text{fill:#fff}
+.tn.visited circle{fill:color-mix(in srgb,var(--vtx) 22%,var(--surface));stroke:var(--vtx)}
+.tn.wrong circle{stroke:var(--in);stroke-width:3;animation:shake .4s}
+.tn.dim{opacity:.32}
+.probe{fill:none;stroke:var(--edge);stroke-width:3;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .2s;pointer-events:none}
+.tnote{font:600 12px var(--f-mono);fill:var(--edge);pointer-events:none}
+.tnote-bg{fill:var(--surface);opacity:.9;pointer-events:none}
+.slot{cursor:pointer}
+.slot circle{fill:transparent;stroke:var(--muted);stroke-dasharray:4 4;stroke-width:1.6}
+.slot:hover circle{stroke:var(--vtx);fill:color-mix(in srgb,var(--vtx) 12%,transparent)}
+.slot line{stroke:var(--line);stroke-dasharray:3 4;stroke-width:1.6}
+.slot text{font:600 16px var(--f-body);fill:var(--muted);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.slot.bad circle{stroke:var(--in);fill:color-mix(in srgb,var(--in) 14%,transparent)}
+@keyframes shake{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+
+/* ---------- Faixas de valores, legendas ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.vchip{font:600 .8rem var(--f-mono);padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--muted);transition:all .25s}
+.vchip.done{color:var(--ink);border-color:var(--ink)}
+.vchip.cur{background:var(--edge);border-color:var(--edge);color:#fff;transform:translateY(-2px)}
+.caption{min-height:3.3em;font-size:.95rem;padding:10px 12px;border-left:3px solid var(--edge);background:color-mix(in srgb,var(--edge) 7%,transparent);border-radius:0 8px 8px 0}
+.stats{display:flex;flex-wrap:wrap;gap:6px}
+.stat{font-family:var(--f-mono);font-size:.74rem;padding:4px 9px;border-radius:7px;background:var(--sunk)}
+.stat b{font-family:var(--f-body);font-size:.9rem;margin-left:4px}
+.seqout{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;align-items:center;font:600 .86rem var(--f-mono)}
+.seqout span{padding:4px 9px;border-radius:7px;background:color-mix(in srgb,var(--vtx) 14%,transparent);animation:tpop .4s}
+.queue{font:600 .8rem var(--f-mono);color:var(--muted)}
+.queue b{color:var(--edge)}
+
+/* ---------- Layouts ---------- */
+.demo{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.anat{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+.lab{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
+.ex{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.terms{display:flex;flex-wrap:wrap;gap:6px}
+.terms button{font-size:.86rem;font-weight:600;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.terms button:hover{border-color:var(--ink)}
+.terms button[aria-pressed="true"]{background:var(--vtx);border-color:var(--vtx);color:#fff}
+.info{font-size:.95rem;padding:12px 14px;border-radius:8px;background:var(--sunk);min-height:6.5em}
+.info dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0 0}
+.info dt{font:600 .74rem var(--f-mono);color:var(--muted);padding-top:3px}
+.info dd{margin:0}
+.reps{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:18px}
+.paren{font:600 15px/2.1 var(--f-mono);word-break:break-all;padding:12px 14px;background:var(--sunk);border-radius:8px}
+.paren span{border-radius:4px;transition:background .15s;cursor:default}
+.paren span.hl{background:color-mix(in srgb,var(--vtx) 24%,transparent)}
+.incl{padding:4px}
+.incl .box{border:1.5px solid var(--line);border-radius:16px;padding:6px 10px 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;transition:background .15s,border-color .15s;cursor:default}
+.incl .box>b{flex-basis:100%;font:600 .85rem var(--f-body);color:var(--muted)}
+.incl .box.leaf{border-radius:999px;padding:3px 12px}
+.incl .box.leaf>b{flex-basis:auto;color:var(--ink)}
+.incl .box.hl{border-color:var(--vtx);background:color-mix(in srgb,var(--vtx) 10%,transparent)}
+.incl .box.hl>b{color:var(--vtx)}
+
+/* ---------- Exercícios ---------- */
+.fb{font-size:.92rem;padding:9px 12px;border-radius:8px;background:var(--sunk);min-height:2.6em}
+.fb.ok{background:color-mix(in srgb,var(--out) 13%,transparent)} .fb.ok b{color:var(--out)}
+.fb.bad{background:color-mix(in srgb,var(--in) 11%,transparent)} .fb.bad b{color:var(--in)}
+.score{font:600 .86rem var(--f-mono)}
+.anat-q{display:grid;gap:8px}
+.anat-q label{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:center;font-size:.92rem}
+.anat-q input{width:100%;font-family:var(--f-mono);text-transform:uppercase}
+.anat-q input.ok{border-color:var(--out);background:color-mix(in srgb,var(--out) 12%,transparent)}
+.anat-q input.bad{border-color:var(--in);background:color-mix(in srgb,var(--in) 12%,transparent)}
+.gcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}
+.gcards svg{display:block;width:100%;height:auto;max-height:150px}
+.gcards .gl{stroke:var(--ink);stroke-width:2.2}
+.gcards .gv{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.gcards h4{font:700 1rem var(--f-display);font-weight:500}
+.vote{display:flex;flex-wrap:wrap;gap:6px}
+.vote button{font-size:.84rem;padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600}
+.vote button:hover{border-color:var(--ink)}
+.vote button.right{border-color:var(--out);background:color-mix(in srgb,var(--out) 14%,transparent);color:var(--out)}
+.vote button.wrong{border-color:var(--in);background:color-mix(in srgb,var(--in) 12%,transparent);color:var(--in)}
+.explain{font-size:.9rem;border-left:3px solid var(--out);padding:2px 0 2px 12px}
+.explain.miss{border-left-color:var(--in)}
+.explain b{display:block}
+.quiz-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.qscore{font:600 .95rem var(--f-mono)}
+.qbar{flex:1;min-width:160px;max-width:360px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.qbar i{display:block;height:100%;width:0;background:var(--out);transition:width .4s}
+.quiz{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px}
+.q h4{font:600 1rem/1.45 var(--f-body)}
+.q .qn{font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
+.opts{display:grid;gap:6px}
+.opts button{text-align:left;font-size:.92rem;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;line-height:1.4}
+.opts button:hover:not([disabled]){border-color:var(--ink)}
+.opts button[disabled]{cursor:default}
+.opts button.right{border-color:var(--out);background:color-mix(in srgb,var(--out) 13%,transparent)}
+.opts button.wrong{border-color:var(--in);background:color-mix(in srgb,var(--in) 11%,transparent)}
+.q .why{font-size:.9rem;border-left:3px solid var(--out);padding-left:10px}
+.q .why.miss{border-left-color:var(--in)}
+.q code{background:var(--sunk);padding:1px 5px;border-radius:4px}
+footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--muted);font-size:.85rem}
+
+@media (max-width:980px){ .demo,.anat,.lab,.ex,.reps{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:720px){ .hero{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:460px){ .hero-pair{grid-template-columns:1fr} .anat-q label{grid-template-columns:1fr} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body style="margin:0">
+
+<header class="wrap hero">
+  <div>
+    <div class="eyebrow">Teoria de Grafos e Matemática Discreta · Aula 07</div>
+    <h1>Laboratório de <span class="v">Árvo</span><span class="e">res</span></h1>
+    <p class="lead" style="margin-top:18px">Pastas no computador, índices de banco de dados, a árvore genealógica: tudo isso é uma árvore. Aqui você vê uma árvore binária de busca crescer, explora as partes de uma árvore e pratica inclusão, exclusão e percursos.</p>
+  </div>
+  <div class="hero-pair">
+    <div><b class="kv">Árvore</b><span>Grafo <b>conexo</b> e <b>sem ciclos</b>. Sem a exigência de ser conexo, é uma floresta.</span><span class="dim">n vértices → n − 1 arestas</span></div>
+    <div><b class="ke">Árvore binária de busca</b><span>Cada nó tem até dois filhos: menores à esquerda, maiores à direita.</span><span class="dim">esq &lt; nó &lt; dir</span></div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="toc" aria-label="Seções">
+    <a href="#demo">1 · Demonstração</a>
+    <a href="#anatomia">2 · Partes da árvore</a>
+    <a href="#lab">3 · Laboratório ABB</a>
+    <a href="#praticos">4 · Exercícios práticos</a>
+    <a href="#teoricos">5 · Exercícios teóricos</a>
+  </nav>
+</div>
+
+<main class="wrap">
+<!-- ================= 1. DEMONSTRAÇÃO ================= -->
+<section id="demo">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 1</span>
+    <h2>Uma árvore binária de busca crescendo</h2>
+    <p>Cada valor entra pela raiz e desce: se é menor que o nó, vai para a esquerda; se é maior, para a direita. Quando encontra uma vaga vazia, ocupa esse lugar. Clique em "Construir do zero" e acompanhe.</p>
+  </div>
+  <div class="demo">
+    <div class="card">
+      <div class="row spread">
+        <select id="d-seq" aria-label="Sequência de valores">
+          <option value="inc1">Inclusão 1 (slides)</option>
+          <option value="inc2">Inclusão 2 (slides)</option>
+          <option value="asc">Valores em ordem crescente</option>
+          <option value="rnd">Sequência aleatória</option>
+        </select>
+        <div class="chips" id="d-chips" aria-label="Valores a inserir"></div>
+      </div>
+      <div class="canvas"><svg id="d-svg" viewBox="0 0 760 320" aria-label="Árvore binária de busca"></svg></div>
+      <div class="row">
+        <button class="btn btn-primary" id="d-build" type="button">Construir do zero</button>
+        <button class="btn" id="d-step" type="button">Próximo valor</button>
+        <button class="btn" id="d-full" type="button">Mostrar tudo</button>
+      </div>
+    </div>
+    <div class="card">
+      <span class="lbl">O que está acontecendo</span>
+      <div class="caption" id="d-cap" aria-live="polite"></div>
+      <div class="stats" id="d-stats"></div>
+      <span class="lbl" style="margin-top:6px">Lendo a árvore em ordem (esquerda, nó, direita)</span>
+      <div class="seqout" id="d-inorder"></div>
+      <p class="hint-line">Em uma árvore binária de busca, o percurso em ordem sempre sai crescente. Experimente a sequência em ordem crescente: a árvore vira uma "lista" torta, com altura máxima.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. ANATOMIA ================= -->
+<section id="anatomia">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 2</span>
+    <h2>As partes de uma árvore</h2>
+    <p>A árvore dos slides, de A a L. Escolha um conceito para destacá-lo, ou clique em um nó para ver tudo sobre ele. Passe o mouse nas outras representações: elas mostram a mesma árvore.</p>
+  </div>
+  <div class="anat">
+    <div class="card">
+      <div class="cardhead"><h4>Representação hierárquica</h4><span class="dim">raiz no nível 0</span></div>
+      <div class="canvas"><svg id="a-svg" viewBox="0 0 640 300" aria-label="Árvore de A a L"></svg></div>
+    </div>
+    <div class="card">
+      <span class="lbl">Conceitos</span>
+      <div class="terms" id="a-terms"></div>
+      <div class="info" id="a-info" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="reps">
+    <div class="card">
+      <div class="cardhead"><h4>Parênteses aninhados</h4><span class="dim">cada nó abre um par</span></div>
+      <div class="paren" id="a-paren"></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h4>Por inclusão</h4><span class="dim">cada subárvore dentro do pai</span></div>
+      <div class="incl" id="a-incl"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. LABORATÓRIO ================= -->
+<section id="lab">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 3</span>
+    <h2>Laboratório: inclua, busque, exclua e percorra</h2>
+    <p>Digite um valor e escolha a operação. A exclusão mostra os três casos: folha, nó com um filho e nó com dois filhos (o lugar fica com o "maior seguinte", o menor valor da subárvore direita). Clique num nó para copiar o valor dele.</p>
+  </div>
+  <div class="lab">
+    <div class="card">
+      <div class="row spread">
+        <div class="row">
+          <input type="number" id="l-val" aria-label="Valor" placeholder="valor" min="0" max="999">
+          <button class="btn btn-primary" id="l-ins" type="button">Incluir</button>
+          <button class="btn" id="l-find" type="button">Buscar</button>
+          <button class="btn danger" id="l-del" type="button">Excluir</button>
+        </div>
+        <select id="l-preset" aria-label="Carregar árvore">
+          <option value="">carregar…</option>
+          <option value="del">Exclusão (slides)</option>
+          <option value="inc1">Inclusão 1 (slides)</option>
+          <option value="inc2">Inclusão 2 (slides)</option>
+          <option value="aloc">Alocação dinâmica (slides)</option>
+          <option value="perc">Percursos (slides)</option>
+          <option value="rnd">Aleatória</option>
+          <option value="empty">Vazia</option>
+        </select>
+      </div>
+      <div class="canvas"><svg id="l-svg" viewBox="0 0 760 340" aria-label="Laboratório de árvore binária de busca"></svg></div>
+      <div class="caption" id="l-cap" aria-live="polite">Escolha um valor e uma operação.</div>
+    </div>
+    <div style="display:grid;gap:18px">
+      <div class="card">
+        <span class="lbl">Percursos</span>
+        <div class="row" id="l-trav">
+          <button class="btn" type="button" data-t="pre">Pré-ordem</button>
+          <button class="btn" type="button" data-t="in">Em ordem</button>
+          <button class="btn" type="button" data-t="post">Pós-ordem</button>
+          <button class="btn" type="button" data-t="level">Em nível</button>
+        </div>
+        <p class="hint-line" id="l-trav-rule">Pré-ordem: nó, esquerda, direita. Em ordem: esquerda, nó, direita. Pós-ordem: esquerda, direita, nó. Em nível: nível a nível, da esquerda para a direita.</p>
+        <div class="seqout" id="l-out"></div>
+        <div class="queue" id="l-queue"></div>
+      </div>
+      <div class="card">
+        <span class="lbl">Medidas da árvore</span>
+        <div class="stats" id="l-stats"></div>
+        <div class="row"><span class="lbl" style="margin:0">Velocidade</span>
+          <div class="seg" id="l-speed" role="group" aria-label="Velocidade"><button type="button" data-v="1.7">lenta</button><button type="button" data-v="1">normal</button><button type="button" data-v="0.45">rápida</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. PRÁTICOS ================= -->
+<section id="praticos">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 4</span>
+    <h2>Exercícios práticos</h2>
+    <p>Cinco atividades com correção automática: montar uma ABB, prever exclusões, percorrer, identificar as partes de uma árvore e reconhecer árvores e florestas.</p>
+  </div>
+
+  <h3 class="sub">A · Monte a árvore binária de busca</h3>
+  <p class="subp">Clique na vaga (círculo tracejado) onde o próximo valor deve entrar. Errou? A árvore não muda: tente de novo.</p>
+  <div class="row" style="margin-bottom:12px"><div class="seg" id="ma-tabs" role="group" aria-label="Sequência"></div></div>
+  <div class="ex">
+    <div class="card">
+      <div class="chips" id="ma-chips"></div>
+      <div class="canvas"><svg id="ma-svg" viewBox="0 0 760 300" aria-label="Montagem da árvore"></svg></div>
+    </div>
+    <div class="card">
+      <div class="fb" id="ma-fb" aria-live="polite"></div>
+      <div class="row"><button class="btn" id="ma-reset" type="button">Recomeçar</button><span class="score" id="ma-score"></span></div>
+    </div>
+  </div>
+
+  <h3 class="sub">B · Quem ocupa o lugar?</h3>
+  <p class="subp">O nó vermelho vai ser excluído. Clique no nó que vai ocupar o lugar dele, ou em "Ninguém" se ele simplesmente sai da árvore. Cada pergunta parte da árvore original dos slides.</p>
+  <div class="ex">
+    <div class="card">
+      <div class="canvas"><svg id="ex-svg" viewBox="0 0 760 340" aria-label="Exercício de exclusão"></svg></div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><h4 id="ex-title"></h4><span class="score" id="ex-score"></span></div>
+      <div class="row"><button class="btn" id="ex-none" type="button">Ninguém: é só remover</button></div>
+      <div class="fb" id="ex-fb" aria-live="polite"></div>
+      <div class="row"><button class="btn btn-primary" id="ex-next" type="button" disabled>Próxima</button><button class="btn" id="ex-reset" type="button">Recomeçar</button></div>
+    </div>
+  </div>
+
+  <h3 class="sub">C · Percorra a árvore</h3>
+  <p class="subp">Escolha o percurso e clique nos nós na ordem em que ele os visita.</p>
+  <div class="row" style="margin-bottom:12px"><div class="seg" id="pc-type" role="group" aria-label="Percurso"><button type="button" data-v="pre">Pré-ordem</button><button type="button" data-v="in">Em ordem</button><button type="button" data-v="post">Pós-ordem</button><button type="button" data-v="level">Em nível</button></div></div>
+  <div class="ex">
+    <div class="card">
+      <div class="canvas"><svg id="pc-svg" viewBox="0 0 760 300" aria-label="Exercício de percurso"></svg></div>
+    </div>
+    <div class="card">
+      <span class="lbl">Sua sequência</span>
+      <div class="seqout" id="pc-out"></div>
+      <div class="fb" id="pc-fb" aria-live="polite"></div>
+      <div class="row"><button class="btn" id="pc-new" type="button">Nova árvore</button><button class="btn" id="pc-show" type="button">Mostrar resposta</button><button class="btn" id="pc-redo" type="button">Recomeçar</button></div>
+    </div>
+  </div>
+
+  <h3 class="sub">D · Identifique as partes</h3>
+  <p class="subp">Uma árvore nova, de M a Z. Preencha a tabela como na aula. Para listas, digite as letras separadas por vírgula, em qualquer ordem. Considere a raiz no nível 0 e a altura como o nível máximo.</p>
+  <div class="ex">
+    <div class="card">
+      <div class="canvas"><svg id="an-svg" viewBox="0 0 640 330" aria-label="Árvore de M a Z"></svg></div>
+    </div>
+    <div class="card">
+      <form class="anat-q" id="an-form"></form>
+      <div class="row"><button class="btn btn-primary" id="an-check" type="button">Verificar</button><button class="btn" id="an-show" type="button">Mostrar respostas</button><span class="score" id="an-score"></span></div>
+    </div>
+  </div>
+
+  <h3 class="sub">E · Árvore, floresta ou nenhum dos dois?</h3>
+  <p class="subp">Lembre: árvore é conexa e sem ciclos; floresta é sem ciclos, conexa ou não.</p>
+  <div class="gcards" id="gk"></div>
+</section>
+
+<!-- ================= 5. TEÓRICOS ================= -->
+<section id="teoricos">
+  <div class="sec-head">
+    <span class="num">SEÇÃO 5</span>
+    <h2>Exercícios teóricos</h2>
+    <p>Doze questões curtas. Cada resposta vem com a explicação.</p>
+  </div>
+  <div class="quiz-top">
+    <span class="qscore" id="q-score"></span>
+    <div class="qbar"><i id="q-bar"></i></div>
+    <button class="btn" id="q-reset" type="button">Recomeçar</button>
+  </div>
+  <div class="quiz" id="quiz"></div>
+</section>
+</main>
+<footer class="wrap">Laboratório de Árvores · material de apoio para Teoria de Grafos e Matemática Discreta (Aula 07: árvores e árvores binárias). Exemplos baseados nos slides da aula.</footer>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const mk = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+const ease = k => k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3)/2;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ================= Desenho animado de árvores ================= */
+class TreeView {
+  constructor(svg, o = {}){
+    this.svg = svg; this.W = o.W || 760; this.H = o.H || 300; this.R = o.R || 19; this.nodes = new Map(); this.anim = false;
+    this.gE = mk('g'); this.gS = mk('g'); this.gN = mk('g'); this.gX = mk('g');
+    svg.append(this.gE, this.gS, this.gN, this.gX);
+    this.probeEl = mk('circle', { r:this.R + 6, class:'probe' }); this.probeEl.style.opacity = 0; this.gX.appendChild(this.probeEl);
+    this.noteBg = mk('rect', { class:'tnote-bg', rx:4, height:18 }); this.noteEl = mk('text', { class:'tnote' });
+    this.noteBg.style.display = 'none'; this.gX.append(this.noteBg, this.noteEl);
+    if (o.onNode) svg.addEventListener('click', ev => { const g = ev.target.closest('.tn'); if (g) o.onNode(g.dataset.id, ev); });
+    if (o.onSlot) svg.addEventListener('click', ev => { const g = ev.target.closest('.slot'); if (g) o.onSlot(g.dataset.key, g); });
+  }
+  setView(W, H){ this.W = W; this.H = H; this.svg.setAttribute('viewBox', `0 0 ${W} ${H}`); }
+  update(list, o = {}){
+    const now = performance.now(), dur = reduce ? 0 : (o.dur ?? 650), seen = new Set();
+    for (const it of list){
+      seen.add(it.id);
+      let n = this.nodes.get(it.id);
+      if (!n){
+        const g = mk('g', { class:'tn' }); g.dataset.id = it.id;
+        const c = mk('circle', { r:this.R }), t = mk('text'), b = mk('text', { class:'tbadge', y:-this.R - 8 });
+        g.append(c, t, b); this.gN.appendChild(g);
+        const e = mk('line', { class:'te' }); this.gE.appendChild(e);
+        const sp = (o.spawn && o.spawn[it.id]) || it;
+        n = { id:it.id, g, t, b, e, x:sp.x, y:sp.y, cls:'' };
+        if (!(o.spawn && o.spawn[it.id]) && o.pop !== false){ g.classList.add('pop'); setTimeout(() => g.classList.remove('pop'), 700); }
+        this.nodes.set(it.id, n);
+      }
+      n.t.textContent = it.label;
+      n.parent = it.parent || null;
+      n.fx = n.x; n.fy = n.y; n.tx = it.x; n.ty = it.y; n.t0 = now; n.dur = dur;
+    }
+    for (const [id, n] of this.nodes) if (!seen.has(id)){
+      n.g.classList.add('gone'); n.e.classList.add('gone'); this.nodes.delete(id);
+      setTimeout(() => { n.g.remove(); n.e.remove(); }, 450);
+    }
+    if (o.W || o.H) this.setView(o.W || this.W, o.H || this.H);
+    if (!this.anim){ this.anim = true; requestAnimationFrame(t => this.frame(t)); }
+  }
+  frame(t){
+    let moving = false;
+    for (const n of this.nodes.values()){
+      const k = n.dur ? Math.max(0, Math.min(1, (t - n.t0)/n.dur)) : 1, e = ease(k);
+      n.x = n.fx + (n.tx - n.fx)*e; n.y = n.fy + (n.ty - n.fy)*e;
+      if (k < 1) moving = true;
+      n.g.setAttribute('transform', `translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`);
+    }
+    for (const n of this.nodes.values()){
+      const p = n.parent && this.nodes.get(n.parent);
+      if (!p){ n.e.setAttribute('visibility', 'hidden'); continue; }
+      n.e.removeAttribute('visibility');
+      const dx = n.x - p.x, dy = n.y - p.y, L = Math.hypot(dx, dy) || 1, R = this.R;
+      n.e.setAttribute('x1', (p.x + dx/L*R).toFixed(1)); n.e.setAttribute('y1', (p.y + dy/L*R).toFixed(1));
+      n.e.setAttribute('x2', (n.x - dx/L*R).toFixed(1)); n.e.setAttribute('y2', (n.y - dy/L*R).toFixed(1));
+    }
+    if (moving) requestAnimationFrame(tt => this.frame(tt)); else this.anim = false;
+  }
+  cls(id, c){ const n = this.nodes.get(id); if (n){ n.cls = c; n.g.setAttribute('class', 'tn' + (c ? ' ' + c : '')); } }
+  edge(id, c){ const n = this.nodes.get(id); if (n) n.e.setAttribute('class', 'te' + (c ? ' ' + c : '')); }
+  badge(id, txt){ const n = this.nodes.get(id); if (n) n.b.textContent = txt == null ? '' : txt; }
+  clear(){ for (const n of this.nodes.values()){ this.cls(n.id, ''); this.edge(n.id, ''); n.b.textContent = ''; } this.probe(null); this.note(null); }
+  pos(id){ const n = this.nodes.get(id); return n ? { x:n.tx, y:n.ty } : null; }
+  probe(id, at){
+    const p = at || (id && this.pos(id));
+    if (!p){ this.probeEl.style.opacity = 0; return; }
+    this.probeEl.style.opacity = 1; this.probeEl.style.transform = `translate(${p.x}px,${p.y}px)`;
+  }
+  note(id, txt, at){
+    const p = at || (id && this.pos(id));
+    if (!p || !txt){ this.noteEl.textContent = ''; this.noteBg.style.display = 'none'; return; }
+    this.noteEl.textContent = txt;
+    const w = txt.length*7.6 + 10, left = p.x + this.R + 10 + w > this.W;
+    const x = left ? p.x - this.R - 10 - w : p.x + this.R + 10, y = p.y - this.R - 6;
+    this.noteEl.setAttribute('x', x + 5); this.noteEl.setAttribute('y', y + 13);
+    this.noteBg.setAttribute('x', x); this.noteBg.setAttribute('y', y); this.noteBg.setAttribute('width', w); this.noteBg.style.display = '';
+  }
+  slots(list){
+    this.gS.textContent = '';
+    for (const s of list){
+      const g = mk('g', { class:'slot' }); g.dataset.key = s.key;
+      if (s.px != null){
+        const dx = s.x - s.px, dy = s.y - s.py, L = Math.hypot(dx, dy) || 1, R = this.R;
+        g.appendChild(mk('line', { x1:s.px + dx/L*R, y1:s.py + dy/L*R, x2:s.x - dx/L*15, y2:s.y - dy/L*15 }));
+      }
+      g.appendChild(mk('circle', { cx:s.x, cy:s.y, r:15 }));
+      const t = mk('text', { x:s.x, y:s.y }); t.textContent = '+'; g.appendChild(t);
+      this.gS.appendChild(g);
+    }
+  }
+}
+
+/* ================= Árvore binária de busca ================= */
+let NID = 0;
+const bnode = v => ({ id:'n' + (++NID), v, l:null, r:null });
+function bstInsert(root, v){
+  const path = []; let n = root, parent = null, side = null;
+  while (n){ path.push(n); if (v === n.v) return { root, path, dup:n }; parent = n; side = v < n.v ? 'l' : 'r'; n = n[side]; }
+  const nn = bnode(v);
+  if (!parent) return { root:nn, path, node:nn, parent:null };
+  parent[side] = nn; return { root, path, node:nn, parent, side };
+}
+const fromList = vals => { let r = null; for (const v of vals) r = bstInsert(r, v).root; return r; };
+function bstPath(root, v){ const path = []; let n = root; while (n){ path.push(n); if (v === n.v) return { path, node:n }; n = v < n.v ? n.l : n.r; } return { path, node:null }; }
+function parentOf(root, t){ let n = root, p = null; while (n && n !== t){ p = n; n = t.v < n.v ? n.l : n.r; } return p; }
+function bstDelete(root, v){
+  const t = bstPath(root, v).node; if (!t) return { root, none:true };
+  const p = parentOf(root, t), put = c => { if (!p) root = c; else if (p.l === t) p.l = c; else p.r = c; };
+  if (!t.l && !t.r){ put(null); return { root, kase:1, t }; }
+  if (!t.l || !t.r){ const c = t.l || t.r; put(c); return { root, kase:2, t, child:c }; }
+  const sp = [t.r]; let s = t.r, sParent = t; while (s.l){ sParent = s; s = s.l; sp.push(s); }
+  const sChild = s.r;
+  if (sParent !== t){ sParent.l = s.r; s.r = t.r; }
+  s.l = t.l; put(s);
+  return { root, kase:3, t, succ:s, succPath:sp, sChild };
+}
+const height = n => n ? 1 + Math.max(height(n.l), height(n.r)) : -1;
+const count = n => n ? 1 + count(n.l) + count(n.r) : 0;
+const leaves = n => !n ? 0 : (!n.l && !n.r) ? 1 : leaves(n.l) + leaves(n.r);
+const minN = n => { while (n && n.l) n = n.l; return n; };
+const maxN = n => { while (n && n.r) n = n.r; return n; };
+function order(root, kind){
+  const out = [];
+  const pre = n => { if (!n) return; out.push(n); pre(n.l); pre(n.r); };
+  const ino = n => { if (!n) return; ino(n.l); out.push(n); ino(n.r); };
+  const post = n => { if (!n) return; post(n.l); post(n.r); out.push(n); };
+  if (kind === 'pre') pre(root); else if (kind === 'in') ino(root); else if (kind === 'post') post(root);
+  else { const q = root ? [root] : []; while (q.length){ const n = q.shift(); out.push(n); if (n.l) q.push(n.l); if (n.r) q.push(n.r); } }
+  return out;
+}
+function levelSteps(root){
+  const steps = [], q = root ? [root] : [];
+  while (q.length){ const n = q.shift(); if (n.l) q.push(n.l); if (n.r) q.push(n.r); steps.push({ n, q:q.map(x => x.v) }); }
+  return steps;
+}
+function layBin(root, o = {}){
+  const out = [], slots = []; let i = 0;
+  (function walk(n, d, parent){
+    if (!n) return;
+    if (!n.l){ if (o.slots) slots.push({ key:n.id + ':l', parent:n, side:'l', d:d + 1, i:i++ }); } else walk(n.l, d + 1, n);
+    out.push({ n, d, i:i++, parent });
+    if (!n.r){ if (o.slots) slots.push({ key:n.id + ':r', parent:n, side:'r', d:d + 1, i:i++ }); } else walk(n.r, d + 1, n);
+  })(root, 0, null);
+  if (o.slots && !root) slots.push({ key:'root', parent:null, side:null, d:0, i:i++ });
+  const cnt = Math.max(1, i), pad = 34, base = o.W || 760;
+  const W = Math.max(base, (cnt - 1)*42 + 2*pad);
+  const dx = cnt > 1 ? Math.min(66, (W - 2*pad)/(cnt - 1)) : 0, x0 = (W - dx*(cnt - 1))/2, top = 40, dy = 66;
+  const maxD = Math.max(0, ...out.map(x => x.d), ...slots.map(x => x.d));
+  const pos = new Map(out.map(x => [x.n.id, { x:x0 + x.i*dx, y:top + x.d*dy }]));
+  return {
+    nodes:out.map(x => ({ id:x.n.id, label:String(x.n.v), parent:x.parent ? x.parent.id : null, x:x0 + x.i*dx, y:top + x.d*dy })),
+    slots:slots.map(s => { const pp = s.parent && pos.get(s.parent.id); return { ...s, x:x0 + s.i*dx, y:top + s.d*dy, px:pp ? pp.x : null, py:pp ? pp.y : null }; }),
+    W, H:top + maxD*dy + 34,
+  };
+}
+const SEQ = {
+  inc1:[57, 45, 77, 13, 60, 84, 9, 25, 78],
+  inc2:[52, 102, 57, 39, 60, 84, 19, 25, 78, 113],
+  asc:[10, 20, 30, 40, 50, 60, 70],
+  del:[61, 43, 89, 16, 51, 66, 100, 11, 32, 55, 79, 90, 77, 82],
+  aloc:[8, 5, 15, 2, 6, 11, 19, 1, 3, 7, 9, 13, 21],
+  perc:[4, 2, 6, 1, 3, 5, 7],
+};
+function randomSeq(n, lo = 10, hi = 99, maxH = 4){
+  for (let tries = 0; tries < 200; tries++){
+    const s = new Set(); while (s.size < n) s.add(lo + Math.floor(Math.random()*(hi - lo + 1)));
+    const a = [...s]; if (height(fromList(a)) <= maxH) return a;
+  }
+  return [50, 30, 70, 20, 40, 60, 80].slice(0, n);
+}
+let speed = 1;
+const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms*speed));
+
+/* ================= 1. Demonstração ================= */
+const D = { seq:SEQ.inc1, idx:0, root:null, busy:false, playing:false };
+const dtv = new TreeView($('#d-svg'), { W:760 });
+function dRender(newId){
+  const L = layBin(D.root);
+  dtv.update(L.nodes, { W:L.W, H:Math.max(L.H, 200) });
+  if (newId) dtv.cls(newId, 'found');
+  $('#d-chips').innerHTML = D.seq.map((v, i) => `<span class="vchip ${i < D.idx ? 'done' : i === D.idx && D.busy ? 'cur' : ''}">${v}</span>`).join('');
+  $('#d-stats').innerHTML = `<span class="stat">nós<b>${count(D.root)}</b></span><span class="stat">altura<b>${D.root ? height(D.root) : '—'}</b></span><span class="stat">folhas<b>${leaves(D.root)}</b></span>`;
+  $('#d-inorder').innerHTML = order(D.root, 'in').map(n => `<span>${n.v}</span>`).join('') || '<span style="background:none;color:var(--muted)">árvore vazia</span>';
+  $('#d-step').disabled = D.busy || D.idx >= D.seq.length;
+}
+async function dStep(){
+  if (D.busy || D.idx >= D.seq.length) return;
+  D.busy = true; const v = D.seq[D.idx]; dRender(); dtv.clear();
+  const steps = []; let n = D.root;
+  if (!n){ $('#d-cap').innerHTML = `<b>${v}</b> chega numa árvore vazia e vira a <b>raiz</b>.`; }
+  while (n){
+    const go = v < n.v ? 'esquerda' : 'direita', sym = v < n.v ? '<' : '>';
+    dtv.probe(n.id); dtv.cls(n.id, 'path'); dtv.note(n.id, `${v} ${sym} ${n.v} → ${go}`);
+    steps.push(`${v} ${sym} ${n.v} → ${go}`);
+    $('#d-cap').innerHTML = `Inserindo <b class="ke">${v}</b>: ${steps.join('; ')}.`;
+    await wait(850);
+    n = v < n.v ? n.l : n.r;
+  }
+  const r = bstInsert(D.root, v); D.root = r.root; D.idx++;
+  dtv.probe(null); dtv.note(null);
+  if (r.parent) $('#d-cap').innerHTML = `Inserindo <b class="ke">${v}</b>: ${steps.join('; ')}. A vaga está livre: <b>${v}</b> vira filho ${r.side === 'l' ? 'esquerdo' : 'direito'} de <b>${r.parent.v}</b>.`;
+  D.busy = false; dtv.clear(); dRender(r.node.id);
+  if (D.idx === D.seq.length) $('#d-cap').innerHTML += ` Pronto: ${D.seq.length} valores, altura ${height(D.root)}.`;
+}
+async function dPlay(){
+  D.playing = true;
+  while (D.playing && D.idx < D.seq.length){ await dStep(); await wait(500); }
+  D.playing = false;
+}
+function dReset(full){
+  D.playing = false; D.idx = 0; D.root = null; dtv.clear();
+  if (full){ D.root = fromList(D.seq); D.idx = D.seq.length; $('#d-cap').innerHTML = `Árvore completa com a sequência ${D.seq.join(', ')}. Clique em "Construir do zero" para ver cada valor descendo pela árvore.`; }
+  else $('#d-cap').textContent = 'A árvore começa vazia.';
+  dRender();
+}
+$('#d-build').addEventListener('click', () => { if (D.busy) return; dReset(false); setTimeout(dPlay, 400); });
+$('#d-step').addEventListener('click', () => { D.playing = false; dStep(); });
+$('#d-full').addEventListener('click', () => { if (D.busy) return; dReset(true); });
+$('#d-seq').addEventListener('change', e => { if (D.busy){ e.target.value = Object.keys(SEQ).find(k => SEQ[k] === D.seq) || 'inc1'; return; } D.seq = e.target.value === 'rnd' ? randomSeq(9) : SEQ[e.target.value]; dReset(true); });
+
+/* ================= Árvores gerais (parênteses) ================= */
+function parseParen(s){
+  let i = 0, k = 0;
+  const skip = () => { while (s[i] === ' ') i++; };
+  function node(){
+    skip(); if (s[i] !== '(') throw new Error('esperava (');
+    i++; skip(); let label = ''; while (/[A-Za-z0-9]/.test(s[i])) label += s[i++];
+    const n = { id:'g' + (++k) + label, label, children:[] };
+    skip(); while (s[i] === '('){ n.children.push(node()); skip(); }
+    if (s[i] !== ')') throw new Error('esperava )'); i++; return n;
+  }
+  return node();
+}
+function flat(root){
+  const out = [];
+  (function walk(n, d, p){ n.depth = d; n.parentNode = p; out.push(n); n.children.forEach(c => walk(c, d + 1, n)); })(root, 0, null);
+  return out;
+}
+function layGen(root, W = 640, top = 40, dy = 70){
+  let leaf = 0; const pos = new Map();
+  (function walk(n, d){
+    if (!n.children.length){ pos.set(n.id, { i:leaf++, d }); return; }
+    n.children.forEach(c => walk(c, d + 1));
+    pos.set(n.id, { i:(pos.get(n.children[0].id).i + pos.get(n.children[n.children.length - 1].id).i)/2, d });
+  })(root, 0);
+  const pad = 40, dx = leaf > 1 ? Math.min(80, (W - 2*pad)/(leaf - 1)) : 0, x0 = (W - dx*(leaf - 1))/2;
+  let maxD = 0;
+  const nodes = flat(root).map(n => { const p = pos.get(n.id); maxD = Math.max(maxD, p.d); return { id:n.id, label:n.label, parent:n.parentNode ? n.parentNode.id : null, x:x0 + p.i*dx, y:top + p.d*dy }; });
+  return { nodes, W, H:top + maxD*dy + 34 };
+}
+const subtree = n => [n].concat(...n.children.map(subtree));
+const sibs = n => n.parentNode ? n.parentNode.children.filter(c => c !== n) : [];
+const names = list => list.map(x => x.label).join(', ') || '—';
+
+/* ================= 2. Anatomia ================= */
+const A_STR = '(A(B(E(I)(J))(F(K)))(C)(D(G(L))(H)))';
+const AR = parseParen(A_STR), AF = flat(AR), ABY = Object.fromEntries(AF.map(n => [n.label, n]));
+const atv = new TreeView($('#a-svg'), { W:640, onNode:id => anatNode(AF.find(n => n.id === id)) });
+{ const L = layGen(AR, 640); atv.update(L.nodes, { W:L.W, H:L.H, dur:0, pop:false }); }
+const aH = Math.max(...AF.map(n => n.depth));
+const TERMS = [
+  { k:'raiz', l:'Raiz', ids:() => [ABY.A], txt:'<b>Raiz:</b> o nó principal, sem pai, de onde saem todos os outros. Aqui: <b>A</b>.' },
+  { k:'folhas', l:'Folhas', ids:() => AF.filter(n => !n.children.length), txt:() => `<b>Folhas</b> (nós terminais): nós sem filhos. Aqui: <b>${names(AF.filter(n => !n.children.length))}</b>. Repare que C e H também são folhas, mesmo estando em níveis altos.` },
+  { k:'internos', l:'Nós internos', ids:() => AF.filter(n => n.children.length), txt:() => `<b>Nós internos:</b> os que não são folha. Aqui: <b>${names(AF.filter(n => n.children.length))}</b>. A raiz também conta, pois tem filhos; alguns livros a deixam de fora.` },
+  { k:'pai', l:'Pai e filhos', ids:() => [ABY.B, ABY.E, ABY.F], txt:'<b>Pai e filhos:</b> dois nós ligados; o de cima é o pai, o descendente direto é o filho. Exemplo: <b>B</b> é pai de <b>E</b> e <b>F</b>.' },
+  { k:'irmaos', l:'Irmãos', ids:() => [ABY.B, ABY.C, ABY.D], txt:'<b>Irmãos:</b> nós com o mesmo pai. Exemplo: <b>B, C e D</b> são irmãos (filhos de A).' },
+  { k:'grau', l:'Grau', badge:n => n.children.length, ids:() => [], txt:'<b>Grau de um nó:</b> quantos filhos ele tem (número sobre cada nó). Grau de A = 3; grau de C = 0.' },
+  { k:'nivel', l:'Nível', badge:n => n.depth, ids:() => [], txt:'<b>Nível:</b> a distância até a raiz (número sobre cada nó). A está no nível 0; H, no nível 2.' },
+  { k:'altura', l:'Altura', ids:() => [ABY.A, ABY.B, ABY.E, ABY.I], badge:n => n.depth, txt:() => `<b>Altura (profundidade):</b> o maior nível da árvore. Aqui: <b>${aH}</b>, alcançado por I, J, K e L. Alguns livros contam níveis em vez de arestas e chegam a ${aH + 1}.` },
+  { k:'sub', l:'Subárvore', ids:() => subtree(ABY.D), txt:'<b>Subárvore:</b> um nó com todos os seus descendentes, um "galho". Exemplo: a subárvore de D tem <b>D, G, H e L</b>.' },
+];
+let aTerm = null;
+const aTermsEl = $('#a-terms');
+TERMS.forEach(t => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t.l; b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => anatTerm(t)); aTermsEl.appendChild(b); });
+function anatClear(){ atv.clear(); AF.forEach(n => atv.badge(n.id, '')); markReps([]); }
+function anatTerm(t){
+  aTerm = t; anatClear();
+  aTermsEl.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', String(TERMS[i] === t)));
+  const ids = t.ids();
+  ids.forEach(n => { atv.cls(n.id, 'hl'); if (n.parentNode && ids.includes(n.parentNode) && t.k !== 'irmaos') atv.edge(n.id, 'hl'); });
+  if (t.badge) AF.forEach(n => atv.badge(n.id, t.badge(n)));
+  if (t.k === 'sub') markReps(ids.map(n => n.id));
+  $('#a-info').innerHTML = typeof t.txt === 'function' ? t.txt() : t.txt;
+}
+function anatNode(n){
+  if (!n) return;
+  aTerm = null; aTermsEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  anatClear();
+  const st = subtree(n);
+  st.forEach(x => { atv.cls(x.id, x === n ? 'hl' : 'sub'); if (x !== n) atv.edge(x.id, 'hl'); });
+  markReps(st.map(x => x.id));
+  $('#a-info').innerHTML = `<b>Nó ${n.label}</b>${n === AR ? ' · raiz' : ''}<dl>
+    <dt>pai</dt><dd>${n.parentNode ? n.parentNode.label : '— (é a raiz)'}</dd>
+    <dt>filhos</dt><dd>${names(n.children)}</dd>
+    <dt>irmãos</dt><dd>${names(sibs(n))}</dd>
+    <dt>grau</dt><dd>${n.children.length}</dd>
+    <dt>nível</dt><dd>${n.depth}</dd>
+    <dt>tipo</dt><dd>${n.children.length ? 'nó interno' : 'folha'}</dd>
+    <dt>subárvore</dt><dd>${names(st)}</dd></dl>`;
+}
+// representações
+function parenHtml(n){ return `<span data-id="${n.id}">(${n.label}${n.children.map(parenHtml).join('')})</span>`; }
+function inclHtml(n){ return n.children.length ? `<div class="box" data-id="${n.id}"><b>${n.label}</b>${n.children.map(inclHtml).join('')}</div>` : `<div class="box leaf" data-id="${n.id}"><b>${n.label}</b></div>`; }
+$('#a-paren').innerHTML = 'T = ' + parenHtml(AR);
+$('#a-incl').innerHTML = inclHtml(AR);
+function markReps(ids){
+  document.querySelectorAll('#a-paren span, #a-incl .box').forEach(e => e.classList.toggle('hl', ids.length > 0 && e.dataset.id === ids[0]));
+}
+['#a-paren', '#a-incl'].forEach(sel => {
+  $(sel).addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-id]'); if (!el) return; e.stopPropagation();
+    const n = AF.find(x => x.id === el.dataset.id); if (!n) return;
+    atv.clear(); AF.forEach(x => atv.badge(x.id, ''));
+    subtree(n).forEach(x => { atv.cls(x.id, x === n ? 'hl' : 'sub'); if (x !== n) atv.edge(x.id, 'hl'); });
+    markReps([n.id]);
+  });
+  $(sel).addEventListener('mouseleave', () => { if (aTerm) anatTerm(aTerm); else { anatClear(); } });
+});
+$('#a-info').innerHTML = 'Escolha um conceito acima ou clique em um nó da árvore.';
+
+/* ================= 3. Laboratório ================= */
+const LB = { root:fromList(SEQ.del), busy:false };
+const ltv = new TreeView($('#l-svg'), { W:760, onNode:id => { const n = order(LB.root, 'pre').find(x => x.id === id); if (n) $('#l-val').value = n.v; } });
+const lcap = h => { $('#l-cap').innerHTML = h; };
+function lRender(o = {}){
+  const L = layBin(LB.root);
+  ltv.update(L.nodes, { W:L.W, H:Math.max(L.H, 220), ...o });
+  const mn = minN(LB.root), mx = maxN(LB.root);
+  $('#l-stats').innerHTML = `<span class="stat">nós<b>${count(LB.root)}</b></span><span class="stat">altura<b>${LB.root ? height(LB.root) : '—'}</b></span><span class="stat">folhas<b>${leaves(LB.root)}</b></span><span class="stat">menor<b>${mn ? mn.v : '—'}</b></span><span class="stat">maior<b>${mx ? mx.v : '—'}</b></span>`;
+}
+function lockLab(b){ LB.busy = b; ['#l-ins', '#l-find', '#l-del', '#l-preset'].forEach(s => { $(s).disabled = b; }); document.querySelectorAll('#l-trav button').forEach(x => { x.disabled = b; }); }
+function readVal(){
+  const v = Number($('#l-val').value);
+  if ($('#l-val').value.trim() === '' || !Number.isInteger(v) || v < 0 || v > 999){ lcap('Digite um número inteiro entre 0 e 999.'); $('#l-val').focus(); return null; }
+  return v;
+}
+async function walkTo(v, verb){
+  const steps = []; let n = LB.root, last = null;
+  while (n){
+    ltv.probe(n.id); ltv.cls(n.id, 'path');
+    if (v === n.v){ ltv.note(n.id, `${v} = ${n.v}`); steps.push(`${v} = ${n.v}`); lcap(`${verb} <b class="ke">${v}</b>: ${steps.join('; ')}.`); await wait(650); return { node:n, steps }; }
+    const go = v < n.v ? 'esquerda' : 'direita', sym = v < n.v ? '<' : '>';
+    ltv.note(n.id, `${v} ${sym} ${n.v} → ${go}`); steps.push(`${v} ${sym} ${n.v} → ${go}`);
+    lcap(`${verb} <b class="ke">${v}</b>: ${steps.join('; ')}.`);
+    await wait(750); last = n; n = v < n.v ? n.l : n.r;
+  }
+  return { node:null, steps, last };
+}
+$('#l-ins').addEventListener('click', async () => {
+  const v = readVal(); if (v == null || LB.busy) return;
+  if (count(LB.root) >= 31){ lcap('Limite de 31 nós no laboratório. Exclua alguns ou carregue outra árvore.'); return; }
+  lockLab(true); ltv.clear(); clearTrav();
+  const w = await walkTo(v, 'Incluindo');
+  if (w.node){ ltv.cls(w.node.id, 'del'); lcap(`Incluindo <b class="ke">${v}</b>: ${w.steps.join('; ')}. <b>${v} já existe</b> na árvore; numa ABB não há valores repetidos.`); await wait(900); }
+  else {
+    const r = bstInsert(LB.root, v); LB.root = r.root; ltv.probe(null); ltv.note(null); lRender(); ltv.cls(r.node.id, 'found');
+    lcap(r.parent ? `Incluindo <b class="ke">${v}</b>: ${w.steps.join('; ')}. Vaga livre: <b>${v}</b> vira filho ${r.side === 'l' ? 'esquerdo' : 'direito'} de <b>${r.parent.v}</b>.` : `<b>${v}</b> vira a raiz da árvore vazia.`);
+  }
+  ltv.probe(null); ltv.note(null); lockLab(false);
+});
+$('#l-find').addEventListener('click', async () => {
+  const v = readVal(); if (v == null || LB.busy) return;
+  lockLab(true); ltv.clear(); clearTrav();
+  const w = await walkTo(v, 'Buscando');
+  ltv.probe(null); ltv.note(null);
+  if (w.node){ ltv.cls(w.node.id, 'found'); lcap(`Buscando <b class="ke">${v}</b>: ${w.steps.join('; ')}. <b>Encontrado</b> em ${w.steps.length} ${w.steps.length === 1 ? 'comparação' : 'comparações'}.`); }
+  else lcap(`Buscando <b class="ke">${v}</b>: ${w.steps.join('; ') || 'árvore vazia'}. Chegou a uma vaga vazia: <b>${v} não está na árvore</b>.`);
+  lockLab(false);
+});
+$('#l-del').addEventListener('click', async () => {
+  const v = readVal(); if (v == null || LB.busy) return;
+  lockLab(true); ltv.clear(); clearTrav();
+  const w = await walkTo(v, 'Excluindo');
+  if (!w.node){ ltv.probe(null); ltv.note(null); lcap(`Excluindo <b class="ke">${v}</b>: ${w.steps.join('; ') || 'árvore vazia'}. <b>${v} não está na árvore</b>; nada a excluir.`); lockLab(false); return; }
+  const t = w.node; ltv.probe(null); ltv.note(null); ltv.cls(t.id, 'del');
+  if (!t.l && !t.r){
+    lcap(`<b>Caso 1 · folha.</b> ${v} não tem filhos: remoção básica, basta tirá-lo.`); await wait(1100);
+  } else if (!t.l || !t.r){
+    const c = t.l || t.r; ltv.cls(c.id, 'succ');
+    lcap(`<b>Caso 2 · um filho.</b> ${v} só tem o filho ${c.v}, que sobe e ocupa o lugar dele, levando a subárvore junto.`); await wait(1400);
+  } else {
+    lcap(`<b>Caso 3 · dois filhos.</b> Procurando o maior seguinte: um passo para a direita e depois tudo à esquerda.`);
+    let s = t.r; ltv.probe(s.id); ltv.note(s.id, 'direita'); await wait(800);
+    while (s.l){ ltv.cls(s.id, 'path'); s = s.l; ltv.probe(s.id); ltv.note(s.id, 'esquerda'); await wait(700); }
+    ltv.probe(null); ltv.note(null); ltv.cls(s.id, 'succ');
+    lcap(`<b>Caso 3 · dois filhos.</b> O maior seguinte de ${v} é <b>${s.v}</b>, o menor valor da subárvore direita. ${s.v} ocupa o lugar de ${v}${s.r ? `, e o filho dele, ${s.r.v}, sobe para o lugar que ${s.v} deixou` : ''}.`);
+    await wait(1500);
+  }
+  const r = bstDelete(LB.root, v); LB.root = r.root;
+  lRender(); setTimeout(() => { if (!LB.busy) ltv.clear(); }, 1300);
+  lockLab(false);
+});
+function clearTrav(){ $('#l-out').innerHTML = ''; $('#l-queue').textContent = ''; }
+const TRAV = { pre:'Pré-ordem: nó, esquerda, direita.', in:'Em ordem: esquerda, nó, direita. Numa ABB, sai em ordem crescente.', post:'Pós-ordem: esquerda, direita, nó. A raiz é sempre a última.', level:'Em nível (largura): nível a nível, da esquerda para a direita, usando uma fila.' };
+document.querySelectorAll('#l-trav button').forEach(b => b.addEventListener('click', async () => {
+  if (LB.busy || !LB.root) return;
+  lockLab(true); ltv.clear(); clearTrav();
+  const k = b.dataset.t, seq = order(LB.root, k), lv = k === 'level' ? levelSteps(LB.root) : null;
+  lcap(`<b>${TRAV[k]}</b>`); $('#l-trav-rule').textContent = TRAV[k];
+  for (let i = 0; i < seq.length; i++){
+    const n = seq[i];
+    ltv.probe(n.id); ltv.cls(n.id, 'visited'); ltv.badge(n.id, i + 1);
+    const s = document.createElement('span'); s.textContent = n.v; $('#l-out').appendChild(s);
+    if (lv) $('#l-queue').innerHTML = `fila depois de visitar ${n.v}: [ <b>${lv[i].q.join(', ') || 'vazia'}</b> ]`;
+    await wait(650);
+  }
+  ltv.probe(null);
+  lcap(`<b>${TRAV[k]}</b> Sequência: ${seq.map(n => n.v).join(', ')}.`);
+  lockLab(false);
+}));
+$('#l-preset').addEventListener('change', e => {
+  const k = e.target.value; e.target.value = ''; if (!k || LB.busy) return;
+  LB.root = k === 'empty' ? null : fromList(k === 'rnd' ? randomSeq(10) : SEQ[k]);
+  ltv.clear(); clearTrav(); lRender({ dur:0 });
+  lcap(k === 'empty' ? 'Árvore vazia. Inclua valores para começar.' : 'Árvore carregada.');
+});
+$('#l-speed').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; speed = +b.dataset.v; $('#l-speed').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
+$('#l-speed').querySelector('[data-v="1"]').setAttribute('aria-pressed', 'true');
+$('#l-val').addEventListener('keydown', e => { if (e.key === 'Enter') $('#l-ins').click(); });
+
+/* ================= 4A. Monte a ABB ================= */
+const MA_SEQS = [
+  { tab:'Inclusão 2 (slides)', seq:SEQ.inc2 },
+  { tab:'Sequência 2', seq:[40, 20, 60, 10, 30, 50, 70, 25, 65] },
+  { tab:'Aleatória', seq:null },
+];
+const MA = { k:0, seq:[], idx:0, root:null, errs:0 };
+const matv = new TreeView($('#ma-svg'), { W:760, onSlot:(key, g) => maSlot(key, g) });
+const maTabs = $('#ma-tabs');
+MA_SEQS.forEach((s, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = s.tab; b.addEventListener('click', () => maStart(i)); maTabs.appendChild(b); });
+function maStart(i){
+  MA.k = i; MA.seq = MA_SEQS[i].seq || randomSeq(9); MA.idx = 0; MA.root = null; MA.errs = 0;
+  maTabs.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-pressed', String(j === i)));
+  matv.update([], { dur:0 }); maRender();
+  const f = $('#ma-fb'); f.className = 'fb'; f.innerHTML = `Comece pelo <b>${MA.seq[0]}</b>: onde ele entra numa árvore vazia?`;
+}
+function maRender(){
+  const done = MA.idx >= MA.seq.length, L = layBin(MA.root, { slots:!done });
+  matv.update(L.nodes, { W:L.W, H:Math.max(L.H, 160) });
+  setTimeout(() => matv.slots(done ? [] : L.slots), reduce ? 0 : 380);
+  $('#ma-chips').innerHTML = MA.seq.map((v, i) => `<span class="vchip ${i < MA.idx ? 'done' : i === MA.idx ? 'cur' : ''}">${v}</span>`).join('');
+  $('#ma-score').textContent = `${MA.idx} de ${MA.seq.length} · ${MA.errs} ${MA.errs === 1 ? 'erro' : 'erros'}`;
+}
+function maSlot(key, g){
+  if (MA.idx >= MA.seq.length) return;
+  const v = MA.seq[MA.idx], probe = bstInsert(cloneT(MA.root), v);
+  const want = probe.parent ? `${idOfClone(probe.parent)}:${probe.side}` : 'root';
+  const f = $('#ma-fb');
+  if (key === want){
+    MA.root = bstInsert(MA.root, v).root; MA.idx++;
+    if (MA.idx >= MA.seq.length){ f.className = 'fb ok'; f.innerHTML = `<b>Árvore completa!</b> ${MA.errs ? `${MA.errs} ${MA.errs === 1 ? 'erro' : 'erros'} no caminho.` : 'Sem nenhum erro.'} Altura final: ${height(MA.root)}.`; }
+    else { f.className = 'fb ok'; f.innerHTML = `<b>Isso.</b> Agora o <b>${MA.seq[MA.idx]}</b>.`; }
+    maRender();
+  } else {
+    MA.errs++; g.classList.add('bad'); setTimeout(() => g.classList.remove('bad'), 700);
+    const path = bstPath(MA.root, v).path.map(n => `${v} ${v < n.v ? '<' : '>'} ${n.v} → ${v < n.v ? 'esquerda' : 'direita'}`);
+    f.className = 'fb bad'; f.innerHTML = `<b>Não é essa vaga.</b> Refaça o caminho a partir da raiz: ${path.length ? path[0] : ''}${path.length > 1 ? '…' : ''}`;
+    $('#ma-score').textContent = `${MA.idx} de ${MA.seq.length} · ${MA.errs} ${MA.errs === 1 ? 'erro' : 'erros'}`;
+  }
+}
+// clona preservando os ids (para descobrir a vaga certa sem alterar a árvore)
+function cloneT(n){ if (!n) return null; return { id:n.id, v:n.v, l:cloneT(n.l), r:cloneT(n.r) }; }
+const idOfClone = n => n.id;
+$('#ma-reset').addEventListener('click', () => maStart(MA.k));
+
+/* ================= 4B. Quem ocupa o lugar? ================= */
+const EX_ITEMS = [32, 66, 89, 61, 16, 43];
+const EX = { i:0, root:null, answered:false, right:0 };
+const extv = new TreeView($('#ex-svg'), { W:760, onNode:id => exAnswer(id) });
+function exLoad(){
+  EX.root = fromList(SEQ.del); EX.answered = false;
+  const L = layBin(EX.root); extv.clear(); extv.update(L.nodes, { W:L.W, H:L.H, dur:0, pop:false });
+  const v = EX_ITEMS[EX.i], t = bstPath(EX.root, v).node; extv.cls(t.id, 'del');
+  $('#ex-title').textContent = `Excluir o ${v} (${EX.i + 1} de ${EX_ITEMS.length})`;
+  $('#ex-score').textContent = `${EX.right} ${EX.right === 1 ? 'acerto' : 'acertos'}`;
+  const f = $('#ex-fb'); f.className = 'fb'; f.textContent = 'Quem fica no lugar dele?';
+  $('#ex-next').disabled = true; $('#ex-none').disabled = false;
+}
+function exAnswer(id){
+  if (EX.answered) return;
+  const v = EX_ITEMS[EX.i], t = bstPath(EX.root, v).node;
+  if (id === t.id) return;
+  EX.answered = true; $('#ex-none').disabled = true;
+  const correct = !t.l && !t.r ? null : (!t.l || !t.r) ? (t.l || t.r) : minN(t.r);
+  const ok = correct ? id === correct.id : id === null;
+  if (ok) EX.right++;
+  if (!ok && id) extv.cls(id, 'wrong');
+  if (correct) extv.cls(correct.id, 'succ');
+  const why = !correct ? `${v} é folha: basta remover.` : (!t.l || !t.r) ? `${v} tem um único filho (${correct.v}), que sobe para o lugar dele.` : `${v} tem dois filhos. O lugar fica com o maior seguinte: um passo à direita e tudo à esquerda chega em <b>${correct.v}</b>${correct.r ? `; o filho ${correct.r.v} ocupa o antigo lugar de ${correct.v}` : ''}.`;
+  const f = $('#ex-fb'); f.className = 'fb ' + (ok ? 'ok' : 'bad'); f.innerHTML = `<b>${ok ? 'Correto!' : 'Não é esse.'}</b> ${why}`;
+  $('#ex-score').textContent = `${EX.right} ${EX.right === 1 ? 'acerto' : 'acertos'}`;
+  setTimeout(() => {
+    EX.root = bstDelete(EX.root, v).root;
+    const L = layBin(EX.root); extv.update(L.nodes, { W:L.W, H:L.H });
+    $('#ex-next').disabled = false;
+    if (EX.i === EX_ITEMS.length - 1){ $('#ex-next').disabled = true; f.innerHTML += ` <b>Fim: ${EX.right} de ${EX_ITEMS.length}.</b>`; }
+  }, reduce ? 0 : 1300);
+}
+$('#ex-none').addEventListener('click', () => exAnswer(null));
+$('#ex-next').addEventListener('click', () => { if (EX.i < EX_ITEMS.length - 1){ EX.i++; exLoad(); } });
+$('#ex-reset').addEventListener('click', () => { EX.i = 0; EX.right = 0; exLoad(); });
+
+/* ================= 4C. Percursos ================= */
+const PC = { root:null, kind:'pre', seq:[], pos:0, errs:0, done:false };
+const pctv = new TreeView($('#pc-svg'), { W:760, onNode:id => pcClick(id) });
+const PC_NAME = { pre:'pré-ordem', in:'em ordem', post:'pós-ordem', level:'em nível' };
+const PC_HINT = { pre:'Em pré-ordem, o nó vem antes dos filhos: comece pela raiz e desça pela esquerda.', in:'Em ordem, a subárvore esquerda inteira vem antes do nó: comece pelo nó mais à esquerda.', post:'Em pós-ordem, os dois filhos vêm antes do nó: a raiz é a última.', level:'Em nível, termine cada nível, da esquerda para a direita, antes de descer.' };
+function pcNew(sameTree){
+  if (!sameTree) PC.root = fromList(randomSeq(7 + Math.floor(Math.random()*3), 10, 99, 3));
+  PC.seq = order(PC.root, PC.kind); PC.pos = 0; PC.errs = 0; PC.done = false;
+  const L = layBin(PC.root); pctv.clear(); pctv.update(L.nodes, { W:L.W, H:L.H, dur:sameTree ? 300 : 0, pop:!sameTree });
+  PC.seq.forEach(n => pctv.badge(n.id, ''));
+  $('#pc-out').innerHTML = '';
+  const f = $('#pc-fb'); f.className = 'fb'; f.innerHTML = `Clique nos nós em <b>${PC_NAME[PC.kind]}</b>.`;
+  $('#pc-type').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === PC.kind)));
+}
+function pcClick(id){
+  if (PC.done) return;
+  const f = $('#pc-fb'), want = PC.seq[PC.pos];
+  if (PC.seq.slice(0, PC.pos).some(n => n.id === id)) return;
+  if (id === want.id){
+    pctv.cls(id, 'visited'); pctv.badge(id, PC.pos + 1);
+    const s = document.createElement('span'); s.textContent = want.v; $('#pc-out').appendChild(s);
+    PC.pos++;
+    if (PC.pos === PC.seq.length){ PC.done = true; f.className = 'fb ok'; f.innerHTML = `<b>Percurso completo!</b> ${PC.errs ? `${PC.errs} ${PC.errs === 1 ? 'clique errado' : 'cliques errados'}.` : 'Sem erros.'} ${PC.seq.map(n => n.v).join(', ')}.`; }
+    else { f.className = 'fb'; f.innerHTML = `Certo. Próximo nó em ${PC_NAME[PC.kind]}?`; }
+  } else {
+    PC.errs++; pctv.cls(id, 'wrong'); setTimeout(() => pctv.cls(id, ''), 600);
+    f.className = 'fb bad'; f.innerHTML = `<b>Não é esse.</b> ${PC_HINT[PC.kind]}`;
+  }
+}
+$('#pc-type').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; PC.kind = b.dataset.v; pcNew(true); });
+$('#pc-new').addEventListener('click', () => pcNew(false));
+$('#pc-redo').addEventListener('click', () => pcNew(true));
+$('#pc-show').addEventListener('click', async () => {
+  pcNew(true); PC.done = true;
+  for (let i = 0; i < PC.seq.length; i++){ const n = PC.seq[i]; pctv.cls(n.id, 'visited'); pctv.badge(n.id, i + 1); const s = document.createElement('span'); s.textContent = n.v; $('#pc-out').appendChild(s); await wait(350); }
+  const f = $('#pc-fb'); f.className = 'fb'; f.innerHTML = `Resposta em ${PC_NAME[PC.kind]}: ${PC.seq.map(n => n.v).join(', ')}. Clique em "Recomeçar" para tentar sozinho.`;
+});
+
+/* ================= 4D. Identifique as partes ================= */
+const M_STR = '(M(N(Q)(R(U)(V)))(O)(P(S)(T(W(Z))(X)(Y))))';
+const MR = parseParen(M_STR), MF = flat(MR), MBY = Object.fromEntries(MF.map(n => [n.label, n]));
+const antv = new TreeView($('#an-svg'), { W:640 });
+{ const L = layGen(MR, 640, 40, 66); antv.update(L.nodes, { W:L.W, H:L.H, dur:0, pop:false }); }
+const mLeaves = MF.filter(n => !n.children.length).map(n => n.label), mInt = MF.filter(n => n.children.length).map(n => n.label);
+const AN_Q = [
+  { q:'Raiz', a:['M'] },
+  { q:'Folhas', a:mLeaves },
+  { q:'Nós internos', a:mInt, alt:mInt.filter(x => x !== 'M'), note:'com ou sem a raiz' },
+  { q:'Filhos de T', a:['W','X','Y'] },
+  { q:'Pai de R', a:['N'] },
+  { q:'Irmãos de S', a:['T'] },
+  { q:'Grau de T', n:3 },
+  { q:'Grau de O', n:0 },
+  { q:'Nível de W', n:MBY.W.depth },
+  { q:'Altura da árvore', n:Math.max(...MF.map(n => n.depth)) },
+  { q:'Subárvore de N', a:subtree(MBY.N).map(n => n.label) },
+];
+$('#an-form').innerHTML = AN_Q.map((x, i) => `<label for="an-${i}"><span>${x.q}${x.note ? ` <span class="hint-line">(${x.note})</span>` : ''}</span><input id="an-${i}" type="text" autocomplete="off" inputmode="${x.n != null ? 'numeric' : 'text'}"></label>`).join('');
+const setEq = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+function anCheck(){
+  let ok = 0;
+  AN_Q.forEach((x, i) => {
+    const el = $('#an-' + i), raw = el.value.trim();
+    if (!raw){ el.className = ''; return; }
+    let good;
+    if (x.n != null) good = Number(raw) === x.n;
+    else { const got = [...new Set((raw.toUpperCase().match(/[A-Z]/g) || []))]; good = setEq(got, x.a) || (x.alt && setEq(got, x.alt)); }
+    el.className = good ? 'ok' : 'bad'; if (good) ok++;
+  });
+  $('#an-score').textContent = `${ok} de ${AN_Q.length} corretas`;
+}
+$('#an-check').addEventListener('click', anCheck);
+$('#an-form').addEventListener('submit', e => { e.preventDefault(); anCheck(); });
+$('#an-show').addEventListener('click', () => { AN_Q.forEach((x, i) => { $('#an-' + i).value = x.n != null ? x.n : x.a.join(', '); }); anCheck(); });
+
+/* ================= 4E. Árvore, floresta ou nenhum? ================= */
+const GK = [
+  { t:'Grafo 1', V:[[30,40],[90,40],[150,40],[210,40],[120,110]], E:[[0,1],[1,2],[2,3],[1,4]], a:'arv', w:'Conexo e sem ciclos: 5 vértices e 4 arestas. É uma árvore (e, por consequência, também uma floresta de uma árvore só).' },
+  { t:'Grafo 2', V:[[40,40],[110,40],[180,40],[40,110],[110,110],[180,110]], E:[[0,1],[1,2],[3,4]], a:'flo', w:'Sem ciclos, mas com três componentes: um caminho de três vértices, um par ligado e um vértice isolado. Não é conexo: é uma floresta.' },
+  { t:'Grafo 3', V:[[60,30],[160,30],[110,100],[200,110]], E:[[0,1],[1,2],[2,0],[2,3]], a:'nen', w:'O triângulo forma um ciclo. Com ciclo, não é árvore nem floresta.' },
+  { t:'Grafo 4', V:[[120,70],[50,30],[190,30],[50,115],[190,115],[120,135]], E:[[0,1],[0,2],[0,3],[0,4],[0,5]], a:'arv', w:'Uma estrela: conexa e sem ciclos, 6 vértices e 5 arestas. É uma árvore.' },
+  { t:'Grafo 5', V:[[50,50],[120,50],[190,50]], E:[], a:'flo', w:'Sem arestas não há ciclo, mas também não há conexão: três árvores de um vértice formam uma floresta.' },
+  { t:'Grafo 6', V:[[50,30],[150,30],[150,110],[50,110],[220,70]], E:[[0,1],[1,2],[2,3],[3,0],[1,4]], a:'nen', w:'O quadrado é um ciclo. Conexo, mas com ciclo: não é árvore. Repare: 5 vértices e 5 arestas, uma a mais que uma árvore teria.' },
+];
+const GK_OPTS = [['arv','Árvore'],['flo','Floresta (não árvore)'],['nen','Nenhum dos dois']];
+$('#gk').innerHTML = GK.map((g, i) => `<div class="card" data-g="${i}"><h4>${g.t}</h4>
+  <svg viewBox="0 0 240 150" aria-label="${g.t}">${g.E.map(([a, b]) => `<line class="gl" x1="${g.V[a][0]}" y1="${g.V[a][1]}" x2="${g.V[b][0]}" y2="${g.V[b][1]}"/>`).join('')}${g.V.map(([x, y]) => `<circle class="gv" cx="${x}" cy="${y}" r="9"/>`).join('')}</svg>
+  <div class="vote">${GK_OPTS.map(([k, l]) => `<button type="button" data-v="${k}">${l}</button>`).join('')}</div><div class="explain" hidden></div></div>`).join('');
+$('#gk').addEventListener('click', e => {
+  const b = e.target.closest('.vote button'); if (!b) return;
+  const card = b.closest('[data-g]'), g = GK[+card.dataset.g], right = b.dataset.v === g.a;
+  card.querySelectorAll('.vote button').forEach(x => { x.classList.remove('right', 'wrong'); if (x.dataset.v === g.a) x.classList.add('right'); });
+  if (!right) b.classList.add('wrong');
+  const ex = card.querySelector('.explain'); ex.hidden = false; ex.className = 'explain' + (right ? '' : ' miss');
+  ex.innerHTML = `<b>${right ? 'Isso mesmo.' : 'Não exatamente.'}</b>${g.w}`;
+});
+
+/* ================= 5. Quiz ================= */
+const Q = [
+  { q:'Uma árvore tem 12 vértices. Quantas arestas ela tem?', o:['11','12','13','Depende do formato'], a:0, w:'Toda árvore com n vértices tem exatamente n − 1 arestas: 12 − 1 = 11.' },
+  { q:'Uma floresta tem 15 vértices e 4 componentes (4 árvores). Quantas arestas?', o:['11','14','15','19'], a:0, w:'Cada árvore tem (vértices − 1) arestas. Somando as 4: 15 − 4 = 11.' },
+  { q:'Entre dois vértices quaisquer de uma árvore existe…', o:['exatamente um caminho','pelo menos dois caminhos','nenhum caminho, se forem folhas','um ciclo'], a:0, w:'Conexa garante pelo menos um caminho; sem ciclos garante que não há um segundo.' },
+  { q:'O que acontece ao acrescentar uma aresta nova a uma árvore, ligando dois vértices que já existem?', o:['Surge exatamente um ciclo','Ela continua sendo árvore','Ela vira uma floresta','Ela se desconecta'], a:0, w:'Já existia um caminho entre os dois vértices; com a aresta nova, esse caminho fecha um ciclo.' },
+  { q:'O percurso em ordem de uma árvore binária de busca produz…', o:['os valores em ordem crescente','os valores na ordem em que foram inseridos','a raiz primeiro','os valores nível a nível'], a:0, w:'Esquerda (menores), nó, direita (maiores), em todos os níveis: o resultado sai ordenado.' },
+  { q:'Inserindo 10, 20, 30, 40, 50, 60, 70 nessa ordem numa ABB vazia, qual é a altura da árvore?', o:['6','3','2','7'], a:0, w:'Cada valor é maior que todos os anteriores e vai sempre para a direita: a árvore vira uma lista com 7 níveis, de 0 a 6. Veja na seção 1, opção "em ordem crescente".' },
+  { q:'Qual é a menor altura possível de uma árvore binária com 15 nós?', o:['3','4','7','14'], a:0, w:'Os níveis 0, 1, 2 e 3 comportam 1 + 2 + 4 + 8 = 15 nós. A altura mínima é 3.' },
+  { q:'Quantos nós cabem, no máximo, no nível 4 de uma árvore binária?', o:['16','8','4','32'], a:0, w:'Cada nível pode dobrar o anterior: 2⁴ = 16.' },
+  { q:'Na exclusão de um nó com dois filhos, quem ocupa o lugar dele (regra do maior seguinte)?', o:['O menor valor da subárvore direita','O filho esquerdo','O maior valor da subárvore direita','A raiz'], a:0, w:'O sucessor direto é o menor dos maiores: um passo para a direita e depois tudo à esquerda. Ele mantém a regra esquerda < nó < direita.' },
+  { q:'Qual estrutura de dados o percurso em nível (largura) usa?', o:['Fila','Pilha','Vetor ordenado','Tabela hash'], a:0, w:'Visita-se o nó da frente e os filhos dele entram no fim da fila; assim os níveis saem na ordem. Os percursos em profundidade usam pilha (ou recursão).' },
+  { q:'O percurso pré-ordem de uma árvore é 4, 2, 1, 3, 6, 5, 7. Qual é a raiz?', o:['4','1','7','2'], a:0, w:'Em pré-ordem, o primeiro visitado é sempre a raiz. Na pós-ordem seria o último.' },
+  { q:'Na representação <code>T = (A(B)(C(D)(E)))</code>, qual afirmação é verdadeira?', o:['D e E são irmãos, filhos de C','B é pai de C','D está no nível 1','A tem três filhos'], a:0, w:'C abre um par que contém (D) e (E): os dois são filhos de C e, portanto, irmãos, no nível 2. A tem dois filhos: B e C.' },
+];
+Q.forEach(q => { const idx = shuffle(q.o.map((_, i) => i)); q.o = idx.map(i => q.o[i]); q.a = idx.indexOf(q.a); });
+const qa = new Array(Q.length).fill(null);
+function renderQuiz(){
+  $('#quiz').innerHTML = Q.map((q, i) => `<div class="card q" data-q="${i}"><span class="qn">QUESTÃO ${i + 1}</span><h4>${q.q}</h4><div class="opts">${q.o.map((o, k) => `<button type="button" data-k="${k}">${String.fromCharCode(97 + k)}) ${o}</button>`).join('')}</div><div class="why" hidden></div></div>`).join('');
+  qScore();
+}
+function qScore(){
+  const done = qa.filter(x => x !== null).length, right = qa.filter((x, i) => x === Q[i].a).length;
+  $('#q-score').textContent = done ? `${right} de ${done} corretas · ${Q.length - done} restantes` : `0 de ${Q.length} respondidas`;
+  $('#q-bar').style.width = (right/Q.length*100) + '%';
+}
+$('#quiz').addEventListener('click', e => {
+  const b = e.target.closest('.opts button'); if (!b || b.disabled) return;
+  const card = b.closest('.q'), i = +card.dataset.q, k = +b.dataset.k, q = Q[i];
+  qa[i] = k;
+  card.querySelectorAll('.opts button').forEach(x => { x.disabled = true; if (+x.dataset.k === q.a) x.classList.add('right'); });
+  if (k !== q.a) b.classList.add('wrong');
+  const w = card.querySelector('.why'); w.hidden = false; w.className = 'why' + (k === q.a ? '' : ' miss');
+  w.innerHTML = `<b>${k === q.a ? 'Correto.' : 'Não é essa.'}</b> ${q.w}`;
+  qScore();
+});
+$('#q-reset').addEventListener('click', () => { qa.fill(null); renderQuiz(); });
+
+/* ================= Início ================= */
+dReset(true);
+lRender({ dur:0 });
+maStart(0); exLoad(); pcNew(false); renderQuiz();
+})();
+</script>
+</body>
+</html>
