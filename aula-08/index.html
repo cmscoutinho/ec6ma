@@ -1496,8 +1496,8 @@
             <span class="num">SEÇÃO 1</span>
             <h2>Fator de balanceamento: quem está pendendo?</h2>
             <p>
-              A altura de uma subárvore é o número de nós no caminho mais longo
-              da sua raiz até uma folha (vazia = 0). Clique em um nó para ver as
+              Como nos slides, a altura de um nó é o número de arestas no caminho mais longo
+              dele até uma folha: folha tem altura 0 e subárvore vazia, −1. Clique em um nó para ver as
               duas subárvores e a conta do fb.
             </p>
           </div>
@@ -2301,6 +2301,11 @@
         const newNode = (v) => ({ id: "n" + ++NID, v, l: null, r: null });
         const h = (n) => (n ? 1 + Math.max(h(n.l), h(n.r)) : 0);
         const fbOf = (n) => h(n.l) - h(n.r);
+// altura como nos slides: folha = 0, subárvore vazia = −1 (o fb não muda)
+const ht = (n) => h(n) - 1;
+const hmin = (n) => (n ? Math.ceil(Math.log2(n + 1)) - 1 : -1);
+const hn = (x) => (x < 0 ? '−' + -x : String(x));
+const hp = (x) => (x < 0 ? '(−' + -x + ')' : String(x));
         const clone = (n) =>
           n ? { id: n.id, v: n.v, l: clone(n.l), r: clone(n.r) } : null;
         const inorder = (n) => (n ? [...inorder(n.l), n, ...inorder(n.r)] : []);
@@ -2586,7 +2591,7 @@
                 [a.id]: Math.abs(f) >= 2 ? "bad" : "check",
               },
               ms: Math.abs(f) >= 2 ? 1300 : 750,
-              cap: `fb(${a.v}) = h(esq) − h(dir) = ${h(a.l)} − ${h(a.r)} = <b>${sg(f)}</b>${Math.abs(f) >= 2 ? ": desbalanceado! Realizar balanceamento? Sim." : "."}`,
+              cap: `fb(${a.v}) = h(esq) − h(dir) = ${hn(ht(a.l))} − ${hp(ht(a.r))} = <b>${sg(f)}</b>${Math.abs(f) >= 2 ? ": desbalanceado! Realizar balanceamento? Sim." : "."}`,
             });
             if (Math.abs(f) >= 2) {
               res.rots.push(fixNode(T, R, a));
@@ -2724,7 +2729,7 @@
             R.snap({
               cls: { [a.id]: Math.abs(f) >= 2 ? "bad" : "check" },
               ms: Math.abs(f) >= 2 ? 1300 : 700,
-              cap: `fb(${a.v}) = ${h(a.l)} − ${h(a.r)} = <b>${sg(f)}</b>${Math.abs(f) >= 2 ? ": desbalanceado! Realizar balanceamento? Sim." : "."}`,
+              cap: `fb(${a.v}) = ${hn(ht(a.l))} − ${hp(ht(a.r))} = <b>${sg(f)}</b>${Math.abs(f) >= 2 ? ": desbalanceado! Realizar balanceamento? Sim." : "."}`,
             });
             if (Math.abs(f) >= 2) res.rots.push(fixNode(T, R, a));
           }
@@ -3089,11 +3094,11 @@
                 `<span class="vchip ${i < D.idx ? "done" : ""} ${i === D.idx - 1 && dPlayer.busy ? "cur" : ""} ${D.rots.has(i) ? "rot" : ""}">${v}</span>`,
             )
             .join("");
-          const hb = h(D.bst.root),
-            ha = h(D.avl.root),
+          const hb = ht(D.bst.root),
+            ha = ht(D.avl.root),
             n = count(D.avl.root);
           $("#d-stats").innerHTML =
-            `<span class="stat">nós<b>${n}</b></span><span class="stat ${hb > ha ? "badv" : ""}">altura ABB<b>${hb}</b></span><span class="stat good">altura AVL<b>${ha}</b></span><span class="stat">mínima possível<b>${n ? Math.ceil(Math.log2(n + 1)) : 0}</b></span>`;
+            `<span class="stat">nós<b>${n}</b></span><span class="stat ${hb > ha ? "badv" : ""}">altura ABB<b>${hn(hb)}</b></span><span class="stat good">altura AVL<b>${hn(ha)}</b></span><span class="stat">mínima possível<b>${hn(hmin(n))}</b></span>`;
           $("#d-step").disabled = D.idx >= D.seq.length;
           $("#d-back").disabled = $("#d-first").disabled = D.idx === 0;
           $("#d-full").disabled = D.idx >= D.seq.length;
@@ -3152,7 +3157,7 @@
           dUi();
           if (D.idx >= D.seq.length)
             $("#d-cap").innerHTML =
-              `Fim: com ${D.seq.length} valores, a ABB comum ficou com altura <b>${h(D.bst.root)}</b> e a AVL com altura <b>${h(D.avl.root)}</b>. Buscar um valor custa no máximo essa quantidade de comparações. Os valores sublinhados em vermelho provocaram rotações.`;
+              `Fim: com ${D.seq.length} valores, a ABB comum ficou com altura <b>${hn(ht(D.bst.root))}</b> e a AVL com altura <b>${hn(ht(D.avl.root))}</b>. Buscar um valor custa no máximo altura + 1 comparações. Os valores sublinhados em vermelho provocaram rotações.`;
         }
         function dReset(full) {
           D.playing = false;
@@ -3169,7 +3174,7 @@
             });
             D.idx = D.seq.length;
             $("#d-cap").innerHTML =
-              `As duas árvores prontas com ${D.seq.join(", ")}. ABB: altura <b>${h(D.bst.root)}</b>. AVL: altura <b>${h(D.avl.root)}</b>. Clique em "Construir do zero" para ver cada inserção e cada rotação.`;
+              `As duas árvores prontas com ${D.seq.join(", ")}. ABB: altura <b>${hn(ht(D.bst.root))}</b>. AVL: altura <b>${hn(ht(D.avl.root))}</b>. Clique em "Construir do zero" para ver cada inserção e cada rotação.`;
           } else $("#d-cap").textContent = "As árvores começam vazias.";
           dDrawBst();
           drawFrame(
@@ -3251,7 +3256,7 @@
           );
           const bad = unbalanced(F2.T.root);
           $("#f-verdict").innerHTML =
-            `<span class="stat">altura<b>${h(F2.T.root)}</b></span>` +
+            `<span class="stat">altura<b>${hn(ht(F2.T.root))}</b></span>` +
             (bad.length
               ? `<span class="stat badv">não é AVL<b>${bad.map((n) => n.v).join(", ")}</b></span>`
               : `<span class="stat good">é AVL<b>✓</b></span>`);
@@ -3261,8 +3266,8 @@
           F2.sel = id;
           const n = inorder(F2.T.root).find((x) => x.id === id);
           if (!n) return;
-          const hl = h(n.l),
-            hr = h(n.r),
+          const hl = ht(n.l),
+            hr = ht(n.r),
             f = hl - hr;
           const desc =
             f === 0
@@ -3271,7 +3276,7 @@
                 ? `pende levemente para a ${f > 0 ? "esquerda" : "direita"} (permitido)`
                 : `<b class="ki">desbalanceado</b>, pendendo para a ${f > 0 ? "esquerda" : "direita"}`;
           $("#f-info").innerHTML =
-            `Nó <b>${n.v}</b><br><span class="kv">h(esq) = ${hl}</span>${n.l ? ` (subárvore de ${n.l.v})` : " (vazia)"} · <span class="ke">h(dir) = ${hr}</span>${n.r ? ` (subárvore de ${n.r.v})` : " (vazia)"}<br><span class="big">fb(${n.v}) = ${hl} − ${hr} = ${sg(f)}</span><br>${desc}.`;
+            `Nó <b>${n.v}</b><br><span class="kv">h(esq) = ${hn(hl)}</span>${n.l ? ` (subárvore de ${n.l.v})` : " (vazia)"} · <span class="ke">h(dir) = ${hn(hr)}</span>${n.r ? ` (subárvore de ${n.r.v})` : " (vazia)"}<br><span class="big">fb(${n.v}) = ${hn(hl)} − ${hp(hr)} = ${sg(f)}</span><br>${desc}.`;
           fDraw();
         }
         $("#f-tree").addEventListener("change", fLoad);
@@ -3305,7 +3310,7 @@
           if (x !== f) b.classList.add("wrong");
           $("#f-fb").className = "fb " + (x === f ? "ok" : "bad");
           $("#f-fb").innerHTML =
-            `<b>${x === f ? "Correto!" : "Não é esse."}</b> fb(${n.v}) = h(esq) − h(dir) = ${h(n.l)} − ${h(n.r)} = ${sg(f)}.`;
+            `<b>${x === f ? "Correto!" : "Não é esse."}</b> fb(${n.v}) = h(esq) − h(dir) = ${hn(ht(n.l))} − ${hp(ht(n.r))} = ${sg(f)}.`;
           $("#f-score").textContent = `${F2.ok} de ${F2.tot} certos`;
           F2.train = null;
           F2.sel = n.id;
@@ -3505,8 +3510,8 @@
             R.frames.forEach((F) => frames.push({ ...F, k: i, cap: `<b>Inserção ${i + 1} de ${vals.length}: ${v}</b> · ${F.cap || ""}` }));
           });
           const nrot = SIM.rot.filter((x) => x.length).length, n = vals.length;
-          frames.push({ root: clone(T.root), k: n, ms: 1200, cap: `Pronto: ${n} valores, altura <b>${h(T.root)}</b> (a mínima possível é ${Math.ceil(Math.log2(n + 1))}), com ${nrot} ${nrot === 1 ? "inserção que exigiu" : "inserções que exigiram"} rotação.` });
-          $("#s-stats").innerHTML = `<span class="stat">nós<b>${n}</b></span><span class="stat">altura<b>${h(T.root)}</b></span><span class="stat">mínima<b>${Math.ceil(Math.log2(n + 1))}</b></span><span class="stat">com rotação<b>${nrot}</b></span>`;
+          frames.push({ root: clone(T.root), k: n, ms: 1200, cap: `Pronto: ${n} valores, altura <b>${hn(ht(T.root))}</b> (a mínima possível é ${hn(hmin(n))}), com ${nrot} ${nrot === 1 ? "inserção que exigiu" : "inserções que exigiram"} rotação.` });
+          $("#s-stats").innerHTML = `<span class="stat">nós<b>${n}</b></span><span class="stat">altura<b>${hn(ht(T.root))}</b></span><span class="stat">mínima<b>${hn(hmin(n))}</b></span><span class="stat">com rotação<b>${nrot}</b></span>`;
           $("#s-log").innerHTML = vals
             .map((v, i) => `<li data-f="${starts[i]}" data-i="${i}" class="${SIM.rot[i].length ? "rot" : ""}"><b>+ ${v}</b> ${SIM.rot[i].length ? "→ " + SIM.rot[i].map((r) => `${RNAME[r.type]} (A = ${r.a}, B = ${r.b})`).join("; ") : "sem rotação"}</li>`)
             .join("");
@@ -3651,7 +3656,7 @@
               "Deixa a inserção sem custo",
             ],
             a: 0,
-            w: "Inserindo 1, 2, 3, …, n numa ABB comum, a altura é n. Numa AVL a altura fica abaixo de cerca de 1,44·log₂ n.",
+            w: "Inserindo 1, 2, 3, …, n numa ABB comum, a altura é n − 1 (uma “lista”). Numa AVL a altura fica abaixo de cerca de 1,44·log₂ n.",
           },
         ];
 
