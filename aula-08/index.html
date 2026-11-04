@@ -1,0 +1,4805 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Competição AVL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap"
+    />
+    <style>
+      /* Mesmo papel pontilhado do "Laboratório de Árvores" (mesma disciplina). Números acima dos nós são fatores de balanceamento; seções recolhíveis. */
+      :root {
+        --bg: #f2f2f7;
+        --surface: #fcfcfe;
+        --sunk: #e8e7f0;
+        --ink: #1c1b2e;
+        --muted: #5e5c75;
+        --line: #d3d1de;
+        --dot: #c9c7d8;
+        --vtx: #2f54d4;
+        --edge: #d2480f;
+        --out: #15804a;
+        --in: #c8233f;
+        --f-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+        --f-body:
+          "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto,
+          sans-serif;
+        --f-mono:
+          "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas,
+          monospace;
+        --r: 10px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #121220;
+          --surface: #1a1a2b;
+          --sunk: #0e0e19;
+          --ink: #e7e6f2;
+          --muted: #9c9ab4;
+          --line: #2e2d45;
+          --dot: #34334d;
+          --vtx: #7c98ff;
+          --edge: #ff8a4c;
+          --out: #4fd08c;
+          --in: #ff6b85;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #121220;
+        --surface: #1a1a2b;
+        --sunk: #0e0e19;
+        --ink: #e7e6f2;
+        --muted: #9c9ab4;
+        --line: #2e2d45;
+        --dot: #34334d;
+        --vtx: #7c98ff;
+        --edge: #ff8a4c;
+        --out: #4fd08c;
+        --in: #ff6b85;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.6 var(--f-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 1240px;
+        margin-inline: auto;
+        padding-inline: clamp(16px, 4vw, 40px);
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        margin: 0;
+        text-wrap: balance;
+      }
+      p {
+        margin: 0;
+      }
+      .kv {
+        color: var(--vtx);
+        font-weight: 600;
+      }
+      .ke {
+        color: var(--edge);
+        font-weight: 600;
+      }
+      .ko {
+        color: var(--out);
+        font-weight: 600;
+      }
+      .ki {
+        color: var(--in);
+        font-weight: 600;
+      }
+      code {
+        font-family: var(--f-mono);
+        font-size: 0.84em;
+      }
+      :focus-visible {
+        outline: 2px solid var(--vtx);
+        outline-offset: 2px;
+      }
+
+      /* cabeçalho */
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: clamp(20px, 4vw, 56px);
+        padding-block: clamp(28px, 5vw, 56px) 20px;
+        align-items: end;
+      }
+      .eyebrow {
+        font-family: var(--f-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+      h1 {
+        font-family: var(--f-display);
+        font-weight: 700;
+        font-size: clamp(2.1rem, 5.4vw, 4rem);
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+      h1 .v {
+        color: var(--vtx);
+      }
+      .lead {
+        font-size: 1.08rem;
+        max-width: 56ch;
+        margin-top: 18px;
+      }
+      .hero-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .hero-pair div {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        padding: 12px 14px;
+        display: grid;
+        gap: 4px;
+      }
+      .hero-pair b {
+        font-family: var(--f-display);
+        font-size: 0.88rem;
+        font-weight: 500;
+      }
+      .hero-pair span {
+        font-size: 0.9rem;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .hero-pair .dim {
+        font-family: var(--f-mono);
+        font-size: 0.74rem;
+        color: var(--ink);
+      }
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-block: 10px 26px;
+        align-items: center;
+      }
+      nav.toc a {
+        font-family: var(--f-mono);
+        font-size: 0.72rem;
+        color: var(--ink);
+        text-decoration: none;
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--surface);
+      }
+      nav.toc a:hover {
+        border-color: var(--ink);
+      }
+      nav.toc .sp {
+        flex: 1;
+      }
+
+      /* seções recolhíveis */
+      section {
+        padding-block: clamp(30px, 5vw, 54px);
+        border-top: 1px solid var(--line);
+      }
+      .sec-top {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      .sec-head {
+        display: grid;
+        gap: 8px;
+        max-width: 74ch;
+      }
+      .sec-head .num {
+        font-family: var(--f-mono);
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
+      h2 {
+        font-family: var(--f-display);
+        font-weight: 500;
+        font-size: clamp(1.35rem, 2.8vw, 2rem);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+      .sec-head p {
+        color: var(--muted);
+      }
+      .collapse {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 7px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .collapse:hover {
+        border-color: var(--ink);
+      }
+      .collapse .chev {
+        display: inline-block;
+        transition: transform 0.25s;
+        font-size: 0.78rem;
+      }
+      section.closed .collapse .chev {
+        transform: rotate(-90deg);
+      }
+      section.closed {
+        padding-block: 18px;
+      }
+      section.closed .sec-head p {
+        display: none;
+      }
+      .sec-body {
+        margin-top: 22px;
+        display: grid;
+        gap: 18px;
+      }
+      section.closed .sec-body {
+        display: none;
+      }
+      h3.sub {
+        font-family: var(--f-display);
+        font-weight: 500;
+        font-size: 1.08rem;
+        margin-top: 10px;
+      }
+      p.subp {
+        color: var(--muted);
+        font-size: 0.95rem;
+        max-width: 74ch;
+        margin-top: -10px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+      }
+      .card h4 {
+        font: 500 0.98rem var(--f-display);
+      }
+      .lbl {
+        font-family: var(--f-mono);
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .hint {
+        font-size: 0.86rem;
+        color: var(--muted);
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .row.spread {
+        justify-content: space-between;
+      }
+
+      /* controles */
+      button {
+        font: inherit;
+        color: inherit;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 8px 13px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          transform 0.1s;
+      }
+      .btn:hover {
+        border-color: var(--ink);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: var(--ink);
+        color: var(--surface);
+        border-color: var(--ink);
+      }
+      .btn-primary:hover {
+        background: var(--vtx);
+        border-color: var(--vtx);
+      }
+      .btn.sm {
+        font-size: 0.78rem;
+        padding: 5px 9px;
+      }
+      .btn.danger:hover {
+        border-color: var(--in);
+        color: var(--in);
+      }
+      .seg {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 3px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--sunk);
+      }
+      .seg button {
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 5px 11px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .seg button[aria-pressed="true"] {
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+      }
+      select,
+      input[type="text"],
+      input[type="number"],
+      input[type="password"] {
+        font: inherit;
+        font-size: 0.9rem;
+        padding: 7px 9px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        min-width: 0;
+      }
+      input[type="number"] {
+        width: 92px;
+        font-family: var(--f-mono);
+      }
+      label.chk {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 0.86rem;
+      }
+
+      /* árvore */
+      .canvas {
+        position: relative;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background-color: var(--surface);
+        background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+        background-size: 20px 20px;
+        overflow: hidden;
+      }
+      .canvas svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+      }
+      .canvas .tag {
+        position: absolute;
+        left: 10px;
+        top: 8px;
+        font: 600 0.66rem var(--f-mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .te {
+        stroke: var(--ink);
+        stroke-width: 2;
+        transition:
+          stroke 0.2s,
+          opacity 0.4s;
+      }
+      .te.gone {
+        opacity: 0;
+      }
+      .tn {
+        cursor: pointer;
+        transition: opacity 0.4s;
+      }
+      .tn.gone {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .tn circle {
+        fill: var(--surface);
+        stroke: var(--ink);
+        stroke-width: 2;
+        transition:
+          fill 0.25s,
+          stroke 0.25s,
+          stroke-width 0.25s;
+      }
+      .tn text {
+        font: 600 14px var(--f-body);
+        fill: var(--ink);
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+        transition: fill 0.25s;
+      }
+      .tn .tbadge {
+        font: 600 11px var(--f-mono);
+        fill: var(--vtx);
+      }
+      .tn.unb .tbadge {
+        fill: var(--in);
+        font-size: 12px;
+      }
+      .tn.unb circle {
+        stroke: var(--in);
+        stroke-width: 2.6;
+      }
+      .tn.pop circle,
+      .tn.pop text:not(.tbadge) {
+        animation: tpop 0.55s cubic-bezier(0.3, 1.6, 0.5, 1);
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      @keyframes tpop {
+        from {
+          transform: scale(0.15);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
+      .tn.path circle {
+        stroke: var(--edge);
+        stroke-width: 3;
+      }
+      .tn.check circle {
+        stroke: var(--vtx);
+        stroke-width: 3.2;
+        fill: color-mix(in srgb, var(--vtx) 12%, var(--surface));
+      }
+      .tn.new circle {
+        fill: #f2d21b;
+        stroke: var(--ink);
+      }
+      .tn.new text:not(.tbadge) {
+        fill: #1c1b2e;
+      }
+      .tn.bad circle {
+        fill: color-mix(in srgb, var(--in) 18%, var(--surface));
+        stroke: var(--in);
+        stroke-width: 3.4;
+      }
+      .tn.pivot circle {
+        fill: color-mix(in srgb, var(--muted) 32%, var(--surface));
+        stroke: var(--ink);
+        stroke-width: 2.6;
+      }
+      .tn.up circle {
+        fill: color-mix(in srgb, var(--vtx) 20%, var(--surface));
+        stroke: var(--vtx);
+        stroke-width: 3;
+      }
+      .tn.move circle {
+        stroke: var(--out);
+        stroke-width: 3.2;
+        fill: color-mix(in srgb, var(--out) 14%, var(--surface));
+      }
+      .tn.move text:not(.tbadge) {
+        fill: var(--out);
+      }
+      .tn.del circle {
+        fill: var(--in);
+        stroke: var(--in);
+      }
+      .tn.del text:not(.tbadge) {
+        fill: #fff;
+      }
+      .tn.succ circle {
+        fill: var(--out);
+        stroke: var(--out);
+      }
+      .tn.succ text:not(.tbadge) {
+        fill: #fff;
+      }
+      .tn.ok circle {
+        stroke: var(--out);
+        stroke-width: 3;
+      }
+      .tn.subL circle {
+        fill: color-mix(in srgb, var(--vtx) 16%, var(--surface));
+        stroke: var(--vtx);
+      }
+      .tn.subR circle {
+        fill: color-mix(in srgb, var(--edge) 16%, var(--surface));
+        stroke: var(--edge);
+      }
+      .tn.sel circle {
+        stroke: var(--ink);
+        stroke-width: 3.6;
+      }
+      .tn.mark circle {
+        stroke: var(--in);
+        stroke-width: 3.2;
+        stroke-dasharray: 5 3;
+      }
+      .tn.dim {
+        opacity: 0.35;
+      }
+      .probe {
+        fill: none;
+        stroke: var(--edge);
+        stroke-width: 3;
+        transition:
+          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.2s;
+        pointer-events: none;
+      }
+      .tnote {
+        font: 600 12px var(--f-mono);
+        fill: var(--edge);
+        pointer-events: none;
+      }
+      .tnote-bg {
+        fill: var(--surface);
+        opacity: 0.92;
+        pointer-events: none;
+      }
+      .rotarrow {
+        fill: none;
+        stroke: var(--edge);
+        stroke-width: 3;
+        stroke-linecap: round;
+        pointer-events: none;
+        animation: rfade 0.5s both;
+      }
+      .rothead {
+        fill: var(--edge);
+        pointer-events: none;
+        animation: rfade 0.5s both;
+      }
+      @keyframes rfade {
+        from {
+          opacity: 0;
+        }
+      }
+
+      /* legendas e textos */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .legend i {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: 2px solid var(--ink);
+        display: inline-block;
+        background: var(--surface);
+      }
+      .legend i.bad {
+        border-color: var(--in);
+        background: color-mix(in srgb, var(--in) 18%, var(--surface));
+      }
+      .legend i.pivot {
+        background: color-mix(in srgb, var(--muted) 32%, var(--surface));
+      }
+      .legend i.up {
+        border-color: var(--vtx);
+        background: color-mix(in srgb, var(--vtx) 20%, var(--surface));
+      }
+      .legend i.move {
+        border-color: var(--out);
+        background: color-mix(in srgb, var(--out) 14%, var(--surface));
+      }
+      .legend i.new {
+        background: #f2d21b;
+      }
+      .legend b {
+        font: 600 0.74rem var(--f-mono);
+        color: var(--vtx);
+      }
+      .caption {
+        min-height: 3.3em;
+        font-size: 0.95rem;
+        padding: 10px 12px;
+        border-left: 3px solid var(--edge);
+        background: color-mix(in srgb, var(--edge) 7%, transparent);
+        border-radius: 0 8px 8px 0;
+      }
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .stat {
+        font-family: var(--f-mono);
+        font-size: 0.72rem;
+        padding: 4px 9px;
+        border-radius: 7px;
+        background: var(--sunk);
+      }
+      .stat b {
+        font-family: var(--f-body);
+        font-size: 0.9rem;
+        margin-left: 4px;
+      }
+      .stat.good b {
+        color: var(--out);
+      }
+      .stat.badv b {
+        color: var(--in);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .vchip {
+        font: 600 0.78rem var(--f-mono);
+        padding: 4px 9px;
+        border-radius: 7px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        transition: all 0.25s;
+      }
+      .vchip.done {
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      .vchip.cur {
+        background: var(--edge);
+        border-color: var(--edge);
+        color: #fff;
+        transform: translateY(-2px);
+      }
+      .vchip.rot {
+        box-shadow: inset 0 -3px 0 var(--in);
+      }
+      .log {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 4px;
+        max-height: 260px;
+        overflow: auto;
+        font-size: 0.86rem;
+      }
+      .log li {
+        padding: 5px 9px;
+        border-radius: 7px;
+        background: var(--sunk);
+      }
+      .log li b {
+        font-family: var(--f-mono);
+        font-size: 0.78rem;
+      }
+      .log li.rot {
+        background: color-mix(in srgb, var(--in) 10%, var(--sunk));
+      }
+
+      /* tabela de regras */
+      .rules {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+      }
+      .rules th,
+      .rules td {
+        padding: 6px 9px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+      }
+      .rules th {
+        font: 600 0.66rem var(--f-mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .rules td:first-child,
+      .rules td:nth-child(2) {
+        font-family: var(--f-mono);
+        font-size: 0.82rem;
+        white-space: nowrap;
+      }
+      .rules tr.on td {
+        background: color-mix(in srgb, var(--edge) 16%, transparent);
+        font-weight: 600;
+      }
+      .rules tr.extra td {
+        color: var(--muted);
+      }
+      .rules tr.extra.on td {
+        color: var(--ink);
+      }
+
+      /* layouts */
+      .duo {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 14px;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+      .pstrip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .pstrip .btn {
+        min-width: 40px;
+        padding: 7px 10px;
+      }
+      .pstrip .pc-count {
+        font: 600 0.72rem var(--f-mono);
+        color: var(--muted);
+        margin-left: 4px;
+      }
+      .pctrl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .pcount {
+        font: 600 0.74rem var(--f-mono);
+        color: var(--muted);
+      }
+      .info {
+        font-size: 0.94rem;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: var(--sunk);
+        min-height: 5em;
+      }
+      .info .big {
+        font: 600 1.1rem var(--f-mono);
+      }
+
+      /* exercícios */
+      .fb {
+        font-size: 0.92rem;
+        padding: 9px 12px;
+        border-radius: 8px;
+        background: var(--sunk);
+        min-height: 2.6em;
+      }
+      .fb.ok {
+        background: color-mix(in srgb, var(--out) 13%, transparent);
+      }
+      .fb.ok b {
+        color: var(--out);
+      }
+      .fb.bad {
+        background: color-mix(in srgb, var(--in) 11%, transparent);
+      }
+      .fb.bad b {
+        color: var(--in);
+      }
+      .choices {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .choices button {
+        font-size: 0.86rem;
+        font-weight: 600;
+        padding: 7px 11px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        cursor: pointer;
+      }
+      .choices button:hover:not([disabled]) {
+        border-color: var(--ink);
+      }
+      .choices button[disabled] {
+        cursor: default;
+      }
+      .choices button.sel {
+        border-color: var(--ink);
+        background: var(--sunk);
+      }
+      .choices button.right {
+        border-color: var(--out);
+        background: color-mix(in srgb, var(--out) 14%, transparent);
+        color: var(--out);
+      }
+      .choices button.wrong {
+        border-color: var(--in);
+        background: color-mix(in srgb, var(--in) 12%, transparent);
+        color: var(--in);
+      }
+      .score {
+        font: 600 0.84rem var(--f-mono);
+      }
+      .dcards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+        gap: 14px;
+      }
+      .dcards .seqs {
+        font: 600 0.8rem var(--f-mono);
+        color: var(--muted);
+      }
+      .ans {
+        display: grid;
+        gap: 8px;
+      }
+      .ans ol {
+        margin: 0;
+        padding-left: 1.2em;
+        font-size: 0.86rem;
+        display: grid;
+        gap: 2px;
+      }
+      .quiz-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .qscore {
+        font: 600 0.92rem var(--f-mono);
+      }
+      .qbar {
+        flex: 1;
+        min-width: 160px;
+        max-width: 360px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--sunk);
+        overflow: hidden;
+      }
+      .qbar i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--out);
+        transition: width 0.4s;
+      }
+      .quiz {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+        gap: 14px;
+      }
+      .q h4 {
+        font: 600 1rem/1.45 var(--f-body);
+      }
+      .q .qn {
+        font-family: var(--f-mono);
+        font-size: 0.68rem;
+        color: var(--muted);
+      }
+      .opts {
+        display: grid;
+        gap: 6px;
+      }
+      .opts button {
+        text-align: left;
+        font-size: 0.92rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        cursor: pointer;
+        line-height: 1.4;
+      }
+      .opts button:hover:not([disabled]) {
+        border-color: var(--ink);
+      }
+      .opts button[disabled] {
+        cursor: default;
+      }
+      .opts button.right {
+        border-color: var(--out);
+        background: color-mix(in srgb, var(--out) 13%, transparent);
+      }
+      .opts button.wrong {
+        border-color: var(--in);
+        background: color-mix(in srgb, var(--in) 11%, transparent);
+      }
+      .q .why {
+        font-size: 0.9rem;
+        border-left: 3px solid var(--out);
+        padding-left: 10px;
+      }
+      .q .why.miss {
+        border-left-color: var(--in);
+      }
+      .open textarea {
+        font: inherit;
+        font-size: 0.92rem;
+        width: 100%;
+        min-height: 90px;
+        padding: 9px 11px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        resize: vertical;
+      }
+      .model {
+        font-size: 0.92rem;
+        border-left: 3px solid var(--vtx);
+        padding: 4px 0 4px 12px;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding-block: 26px 46px;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      /* ---------- competição ---------- */
+      .idbar {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: color-mix(in srgb, var(--bg) 90%, transparent);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+      }
+      .idbar .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        align-items: center;
+        padding-block: 10px;
+      }
+      .idbar #who {
+        flex: 1 1 200px;
+      }
+      .idbar #mat {
+        flex: 0 1 160px;
+      }
+      .clock {
+        font: 600 0.8rem var(--f-mono);
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: var(--sunk);
+        white-space: nowrap;
+      }
+      .clock.on {
+        background: color-mix(in srgb, var(--out) 16%, transparent);
+        color: var(--out);
+      }
+      .clock.warn {
+        background: color-mix(in srgb, var(--edge) 18%, transparent);
+        color: var(--edge);
+      }
+      .clock.end {
+        background: color-mix(in srgb, var(--in) 14%, transparent);
+        color: var(--in);
+      }
+      .ptsb {
+        font: 600 0.8rem var(--f-mono);
+        white-space: nowrap;
+      }
+      .need {
+        border-color: var(--in) !important;
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--in) 25%, transparent);
+      }
+      .send-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-size: 0.92rem;
+      }
+      .send-panel.ok {
+        background: color-mix(in srgb, var(--out) 12%, var(--surface));
+        border-color: var(--out);
+      }
+      .send-panel.bad {
+        background: color-mix(in srgb, var(--in) 10%, var(--surface));
+        border-color: var(--in);
+      }
+      .ptinfo {
+        font-size: 0.92rem;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--vtx) 9%, var(--surface));
+        border: 1px solid color-mix(in srgb, var(--vtx) 30%, var(--line));
+      }
+      .locked {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 18px;
+        border: 1.5px dashed var(--line);
+        border-radius: var(--r);
+        background: var(--surface);
+      }
+      .locked svg {
+        width: 30px;
+        height: 30px;
+        flex: none;
+        color: var(--muted);
+      }
+      .locked p {
+        color: var(--muted);
+        font-size: 0.92rem;
+        margin-top: 4px;
+      }
+      .slot {
+        cursor: pointer;
+      }
+      .slot circle {
+        fill: transparent;
+        stroke: var(--muted);
+        stroke-dasharray: 4 4;
+        stroke-width: 1.6;
+      }
+      .slot:hover circle {
+        stroke: var(--vtx);
+        fill: color-mix(in srgb, var(--vtx) 12%, transparent);
+      }
+      .slot line {
+        stroke: var(--line);
+        stroke-dasharray: 3 4;
+        stroke-width: 1.6;
+        pointer-events: none;
+      }
+      .slot text {
+        font: 600 16px var(--f-body);
+        fill: var(--muted);
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+      }
+      .slot.bad circle {
+        stroke: var(--in);
+        fill: color-mix(in srgb, var(--in) 14%, transparent);
+        animation: shake 0.4s;
+      }
+      @keyframes shake {
+        20%,
+        60% {
+          transform: translateX(-4px);
+        }
+        40%,
+        80% {
+          transform: translateX(4px);
+        }
+      }
+      .slot.bad {
+        transform-box: fill-box;
+      }
+      .expts {
+        font: 600 0.84rem var(--f-mono);
+      }
+      .hint-a {
+        font-size: 0.84rem;
+        color: var(--muted);
+      }
+      /* professor */
+      .rk-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .rk-status {
+        font-size: 0.86rem;
+        color: var(--muted);
+      }
+      .state-chip {
+        font: 600 0.74rem var(--f-mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: var(--sunk);
+      }
+      .state-chip.on {
+        background: color-mix(in srgb, var(--out) 18%, transparent);
+        color: var(--out);
+      }
+      .state-chip.end {
+        background: color-mix(in srgb, var(--in) 15%, transparent);
+        color: var(--in);
+      }
+      .bigclock {
+        font: 700 clamp(1.8rem, 4vw, 2.6rem) var(--f-mono);
+        letter-spacing: -0.02em;
+      }
+      .rk-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+      .rk-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      .rk-table th,
+      .rk-table td {
+        padding: 7px 9px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+      }
+      .rk-table th {
+        font: 600 0.64rem var(--f-mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .rk-table td.n {
+        font-family: var(--f-mono);
+        font-size: 0.84rem;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .rk-table tr.flash td {
+        animation: flash 2.4s;
+      }
+      @keyframes flash {
+        0% {
+          background: color-mix(in srgb, var(--edge) 30%, transparent);
+        }
+        100% {
+          background: transparent;
+        }
+      }
+      .medal {
+        display: inline-flex;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        font: 700 0.76rem var(--f-mono);
+        background: var(--sunk);
+      }
+      .medal.g1 {
+        background: #f2c94c;
+        color: #3a2c00;
+      }
+      .medal.g2 {
+        background: #c9ced6;
+        color: #222;
+      }
+      .medal.g3 {
+        background: #d99a5b;
+        color: #2a1600;
+      }
+      .feed {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 5px;
+        max-height: 420px;
+        overflow: auto;
+      }
+      .feed li {
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 9px;
+        border-radius: 7px;
+        background: var(--sunk);
+        font-size: 0.86rem;
+      }
+      .feed li.new {
+        animation: flash 2.4s;
+      }
+      .feed .t {
+        font: 600 0.72rem var(--f-mono);
+        color: var(--muted);
+      }
+      .tag-ok,
+      .tag-late {
+        font: 600 0.66rem var(--f-mono);
+        padding: 2px 7px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .tag-ok {
+        background: color-mix(in srgb, var(--out) 16%, transparent);
+        color: var(--out);
+      }
+      .tag-late {
+        background: color-mix(in srgb, var(--in) 14%, transparent);
+        color: var(--in);
+      }
+      .setup ol {
+        margin: 0;
+        padding-left: 1.2em;
+        display: grid;
+        gap: 4px;
+        font-size: 0.92rem;
+      }
+      /* telão */
+      .telao {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: var(--bg);
+        overflow: auto;
+        padding: clamp(16px, 3vw, 40px);
+      }
+      .telao-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+      .telao h2 {
+        font-size: clamp(1.4rem, 3vw, 2.4rem);
+      }
+      .telao .bigclock {
+        font-size: clamp(2.4rem, 7vw, 5rem);
+      }
+      .tl-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+        position: relative;
+      }
+      .tl-list li {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) auto auto;
+        gap: 16px;
+        align-items: center;
+        padding: 12px 18px;
+        border-radius: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-size: clamp(1rem, 2vw, 1.4rem);
+        will-change: transform;
+      }
+      .tl-list li .nm {
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tl-list li .sc {
+        font: 700 1.05em var(--f-mono);
+      }
+      .tl-list li .tm {
+        font: 600 0.8em var(--f-mono);
+        color: var(--muted);
+      }
+      .tl-list li.up {
+        box-shadow: 0 0 0 3px var(--out);
+      }
+      .tl-list .medal {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+      .tl-ticker {
+        margin-top: 16px;
+        font-size: 1rem;
+        color: var(--muted);
+        min-height: 1.6em;
+      }
+      @media (max-width: 980px) {
+        .rk-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (max-width: 720px) {
+        .idbar {
+          position: static;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .two {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (max-width: 720px) {
+        .hero,
+        .duo {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (max-width: 460px) {
+        .hero-pair {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0">
+    <div class="idbar" id="idbar">
+      <div class="wrap">
+        <span class="lbl">Competição</span>
+        <input
+          id="who"
+          type="text"
+          placeholder="Seu nome completo"
+          autocomplete="name"
+          aria-label="Seu nome completo"
+          maxlength="80"
+        />
+        <input
+          id="mat"
+          type="text"
+          placeholder="Matrícula (opcional)"
+          aria-label="Matrícula"
+          maxlength="30"
+        />
+        <span class="clock" id="clock">conectando…</span>
+        <span class="ptsb" id="pts">0 / 28 pontos</span>
+        <button class="btn btn-primary" id="send" type="button">
+          Enviar resultado
+        </button>
+      </div>
+      <div class="wrap send-panel" id="sendp" hidden aria-live="polite"></div>
+    </div>
+    <header class="wrap hero">
+      <div>
+        <div class="eyebrow">Teoria dos Grafos · Aula 11 · Árvores AVL</div>
+        <h1>Competição: <span class="v">Árvores AVL</span></h1>
+        <p class="lead">
+          Uma árvore binária de busca só é rápida se estiver balanceada. A
+          árvore AVL (Adelson-Velskii e Landis, 1962) confere o fator de
+          balanceamento a cada inserção ou remoção e, quando ele passa de ±1,
+          corrige a árvore com rotações locais.
+        </p>
+        <p class="ptinfo" style="margin-top: 14px">
+          <b>Como funciona a competição.</b> Escreva seu nome na barra do topo.
+          As seções 1 a 3 são exemplos para revisar. Os dois exercícios de
+          construção (7 + 9 pontos) e as 12 questões teóricas (12 pontos) abrem
+          quando o professor iniciar o cronômetro. Envie quando quiser; você
+          pode reenviar, mas vale sempre o <b>último envio</b> (pontos e
+          horário). Desempate: mais pontos e, depois, menor tempo. Envios depois
+          do fim do tempo não mudam o ranking.
+        </p>
+      </div>
+      <div class="hero-pair">
+        <div>
+          <b class="kv">Fator de balanceamento</b
+          ><span>Altura da subárvore esquerda menos a da direita.</span
+          ><span class="dim">fb = h(esq) − h(dir)</span>
+        </div>
+        <div>
+          <b class="ki">Regra AVL</b
+          ><span
+            >Todo nó tem fb −1, 0 ou +1. Com ±2, aplica-se uma rotação.</span
+          ><span class="dim">+ pende à esquerda · − à direita</span>
+        </div>
+      </div>
+    </header>
+    <div class="wrap">
+      <nav class="toc" aria-label="Seções">
+        <a href="#demo">1 · ABB × AVL</a>
+        <a href="#fator">2 · Fator de balanceamento</a>
+        <a href="#rotacoes">3 · Rotações</a>
+        <a href="#p1">4 · Exercício 1</a>
+        <a href="#p2">5 · Exercício 2</a>
+        <a href="#teoricos">6 · Teóricas</a>
+        <a href="#prof">Professor</a>
+        <span class="sp"></span>
+        <button class="btn sm" id="all-close" type="button">
+          Recolher todas
+        </button>
+        <button class="btn sm" id="all-open" type="button">
+          Mostrar todas
+        </button>
+      </nav>
+    </div>
+
+    <main class="wrap">
+      <!-- ============ 1. DEMONSTRAÇÃO ============ -->
+      <section id="demo" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">SEÇÃO 1</span>
+            <h2>Os mesmos valores, duas árvores</h2>
+            <p>
+              À esquerda, uma árvore binária de busca comum; à direita, uma AVL.
+              Os valores entram na mesma ordem. Repare como a ABB pode virar uma
+              "escada", enquanto a AVL gira os nós para continuar baixa.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body">
+          <div class="card">
+            <div class="row spread">
+              <select id="d-seq" aria-label="Sequência de valores">
+                <option value="ex1">
+                  Slides, exemplo 1: 57, 45, 77, 13, 60, 84, 9, 25, 78
+                </option>
+                <option value="ex2">
+                  Slides, exemplo 2: 57, 45, 13, 9, 25, 60
+                </option>
+                <option value="slides">
+                  Slides, outro exemplo: 1, 2, 3, 10, 4, 5, 9, 7, 8
+                </option>
+                <option value="asc">Ordem crescente: 1 a 12</option>
+                <option value="desc">Ordem decrescente: 12 a 1</option>
+                <option value="rnd">Sequência aleatória</option>
+              </select>
+              <div class="chips" id="d-chips"></div>
+            </div>
+            <div class="duo">
+              <div class="canvas">
+                <span class="tag">ABB comum</span
+                ><svg
+                  id="d-bst"
+                  viewBox="0 0 560 300"
+                  aria-label="Árvore binária de busca comum"
+                ></svg>
+              </div>
+              <div class="canvas">
+                <span class="tag">Árvore AVL</span
+                ><svg
+                  id="d-avl"
+                  viewBox="0 0 560 300"
+                  aria-label="Árvore AVL"
+                ></svg>
+              </div>
+            </div>
+            <div class="row spread">
+              <div class="row">
+                <button
+                  class="btn"
+                  id="d-first"
+                  type="button"
+                  title="Árvores vazias"
+                  aria-label="Voltar ao início"
+                >
+                  ⏮
+                </button>
+                <button class="btn" id="d-back" type="button">
+                  ◀ Valor anterior
+                </button>
+                <button class="btn btn-primary" id="d-build" type="button">
+                  ▶ Construir do zero
+                </button>
+                <button class="btn" id="d-step" type="button">
+                  Próximo valor ▶
+                </button>
+                <button
+                  class="btn"
+                  id="d-full"
+                  type="button"
+                  title="Árvores completas"
+                  aria-label="Ir ao final"
+                >
+                  ⏭
+                </button>
+              </div>
+              <div class="stats" id="d-stats"></div>
+            </div>
+            <div class="caption" id="d-cap" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 2. FATOR DE BALANCEAMENTO ============ -->
+      <section id="fator" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">SEÇÃO 2</span>
+            <h2>Fator de balanceamento: quem está pendendo?</h2>
+            <p>
+              A altura de uma subárvore é o número de nós no caminho mais longo
+              da sua raiz até uma folha (vazia = 0). Clique em um nó para ver as
+              duas subárvores e a conta do fb.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body">
+          <div class="two">
+            <div class="card">
+              <div class="row spread">
+                <select id="f-tree" aria-label="Árvore">
+                  <option value="ex1">
+                    Slides, exemplo 1: 57, 45, 77, 13, 60, 84, 9, 25, 78
+                  </option>
+                  <option value="ex2">
+                    Slides, exemplo 2: 57, 45, 13, 9, 25, 60
+                  </option>
+                  <option value="avl">AVL do exemplo de inserção</option>
+                  <option value="rnd">ABB aleatória</option>
+                </select>
+                <label class="chk"
+                  ><input type="checkbox" id="f-show" checked /> mostrar
+                  fb</label
+                >
+              </div>
+              <div class="canvas">
+                <svg
+                  id="f-svg"
+                  viewBox="0 0 760 300"
+                  aria-label="Árvore com fatores de balanceamento"
+                ></svg>
+              </div>
+              <div class="legend">
+                <span><b>+1</b> número acima do nó = fb</span
+                ><span><i class="bad"></i>|fb| ≥ 2: desbalanceado</span
+                ><span style="color: var(--vtx)">■ subárvore esquerda</span
+                ><span style="color: var(--edge)">■ subárvore direita</span>
+              </div>
+            </div>
+            <div class="card">
+              <span class="lbl">Conta do nó selecionado</span>
+              <div class="info" id="f-info">Clique em um nó da árvore.</div>
+              <div class="stats" id="f-verdict"></div>
+              <span class="lbl" style="margin-top: 4px">Treino rápido</span>
+              <p class="hint">
+                Um nó será destacado e os fb ficarão escondidos. Quanto vale o
+                fb dele?
+              </p>
+              <div class="row">
+                <button class="btn" id="f-train" type="button">
+                  Sortear um nó</button
+                ><span class="score" id="f-score"></span>
+              </div>
+              <div class="choices" id="f-opts" hidden></div>
+              <div class="fb" id="f-fb" hidden></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 3. ROTAÇÕES ============ -->
+      <section id="rotacoes" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">SEÇÃO 3</span>
+            <h2>As quatro rotações, passo a passo</h2>
+            <p>
+              A é o nó desbalanceado (fb ±2) e B é o filho dele do lado mais
+              alto. Os sinais de fb(A) e fb(B) decidem a rotação: mesmo sinal,
+              rotação simples; sinais opostos, rotação dupla.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body">
+          <div class="seg" id="r-case" role="group" aria-label="Caso">
+            <button type="button" data-k="rse">Simples à esquerda</button>
+            <button type="button" data-k="rsd">Simples à direita</button>
+            <button type="button" data-k="rde">Dupla à esquerda</button>
+            <button type="button" data-k="rdd">Dupla à direita</button>
+            <button type="button" data-k="ese">Caso especial (esq.)</button>
+            <button type="button" data-k="esd">Caso especial (dir.)</button>
+          </div>
+          <div class="two">
+            <div class="card">
+              <div class="row spread">
+                <span class="pcount" id="r-count"></span
+                ><span class="hint" id="r-src"></span>
+              </div>
+              <div class="canvas">
+                <svg
+                  id="r-svg"
+                  viewBox="0 0 400 220"
+                  aria-label="Rotação animada"
+                ></svg>
+              </div>
+              <div class="legend">
+                <span><i class="bad"></i>A (desbalanceado)</span
+                ><span><i class="pivot"></i>B, filho do lado mais alto</span
+                ><span><i class="up"></i>C, neto que sobe (rotação dupla)</span
+                ><span><i class="move"></i>subárvore que troca de pai</span>
+              </div>
+              <div class="caption" id="r-cap" aria-live="polite"></div>
+              <div class="pctrl">
+                <div class="row">
+                  <button
+                    class="btn"
+                    id="r-first"
+                    type="button"
+                    aria-label="Primeiro passo"
+                  >
+                    ⏮
+                  </button>
+                  <button class="btn" id="r-prev" type="button">
+                    ← Anterior
+                  </button>
+                  <button class="btn btn-primary" id="r-play" type="button">
+                    ▶ Reproduzir
+                  </button>
+                  <button class="btn" id="r-next" type="button">
+                    Próximo →
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <span class="lbl">Quando usar cada rotação</span>
+              <table class="rules" id="r-rules">
+                <thead>
+                  <tr>
+                    <th>fb(A)</th>
+                    <th>fb(B)</th>
+                    <th>Rotação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-r="p2p1">
+                    <td>+2</td>
+                    <td>+1</td>
+                    <td>simples à direita</td>
+                  </tr>
+                  <tr data-r="m2m1">
+                    <td>−2</td>
+                    <td>−1</td>
+                    <td>simples à esquerda</td>
+                  </tr>
+                  <tr data-r="p2m1">
+                    <td>+2</td>
+                    <td>−1</td>
+                    <td>dupla à direita (esquerda em B, direita em A)</td>
+                  </tr>
+                  <tr data-r="m2p1">
+                    <td>−2</td>
+                    <td>+1</td>
+                    <td>dupla à esquerda (direita em B, esquerda em A)</td>
+                  </tr>
+                  <tr data-r="z" class="extra">
+                    <td>±2</td>
+                    <td>0</td>
+                    <td>simples (só acontece em remoções)</td>
+                  </tr>
+                </tbody>
+              </table>
+              <span class="lbl">O que acontece na rotação</span>
+              <ul
+                class="hint"
+                id="r-howto"
+                style="margin: 0; padding-left: 1.1em; display: grid; gap: 4px"
+              ></ul>
+              <p class="hint">
+                A ordem dos valores (percurso em ordem) nunca muda numa rotação:
+                a árvore continua sendo de busca.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 4 e 5. EXERCÍCIOS PRÁTICOS (VALEM PONTOS) ============ -->
+      <section id="p1" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">COMPETIÇÃO · EXERCÍCIO PRÁTICO 1 · 7 PONTOS</span>
+            <h2>Construa a AVL: 8 valores</h2>
+            <p>
+              Para cada valor, clique no espaço vazio (+) onde ele entra. Depois
+              diga se é preciso balancear: se for, clique no nó A (o primeiro
+              desbalanceado acima do nó inserido) e escolha a rotação. Do 2º
+              valor em diante, cada um vale 1 ponto quando a posição e a decisão
+              estão certas de primeira.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body" data-ex="p1"></div>
+      </section>
+      <section id="p2" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">COMPETIÇÃO · EXERCÍCIO PRÁTICO 2 · 9 PONTOS</span>
+            <h2>Construa a AVL: 10 valores</h2>
+            <p>
+              Mesmas regras do exercício 1, com uma sequência maior. Os fatores
+              de balanceamento aparecem só depois da sua decisão.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body" data-ex="p2"></div>
+      </section>
+
+      <!-- ============ 6. TEÓRICOS (VALEM PONTOS) ============ -->
+      <section id="teoricos" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">COMPETIÇÃO · QUESTÕES TEÓRICAS · 12 PONTOS</span>
+            <h2>Questões teóricas</h2>
+            <p>
+              Cada questão vale 1 ponto. Só a primeira resposta conta: pense
+              antes de clicar.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body">
+          <div class="locked" data-lock>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <rect x="4" y="10.5" width="16" height="10" rx="2" />
+              <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+            </svg>
+            <div>
+              <b>Aguardando o início da competição</b>
+              <p>
+                As questões abrem quando o professor iniciar o cronômetro. A
+                página verifica sozinha, não precisa recarregar.
+              </p>
+            </div>
+          </div>
+          <div data-gated hidden>
+            <div class="quiz-top">
+              <span class="qscore" id="q-score"></span>
+              <div class="qbar"><i id="q-bar"></i></div>
+            </div>
+            <div class="quiz" id="quiz"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 7. PROFESSOR ============ -->
+      <section id="prof" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">ÁREA DO PROFESSOR</span>
+            <h2>Cronômetro, envios e ranking</h2>
+            <p>
+              Digite a chave definida no script da planilha. Daqui você inicia e
+              encerra a competição, acompanha os envios em tempo real e projeta
+              o ranking.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body">
+          <div class="card" id="pf-card">
+            <form class="rk-bar" id="pf-form">
+              <input
+                type="password"
+                id="pf-key"
+                placeholder="Chave do professor"
+                autocomplete="current-password"
+                aria-label="Chave do professor"
+              />
+              <button class="btn btn-primary" type="submit">Entrar</button>
+              <span class="rk-status" id="pf-status" aria-live="polite"></span>
+            </form>
+            <div id="pf-panel" hidden>
+              <div
+                class="rk-bar"
+                style="justify-content: space-between; margin-top: 6px"
+              >
+                <div class="row">
+                  <span class="state-chip" id="pf-state">—</span
+                  ><span class="bigclock" id="pf-clock">--:--</span>
+                </div>
+                <div class="row">
+                  <label class="chk"
+                    ><input type="checkbox" id="pf-auto" checked /> atualizar a
+                    cada 5 s</label
+                  >
+                  <button class="btn" type="button" id="pf-refresh">
+                    Atualizar agora
+                  </button>
+                  <button class="btn btn-primary" type="button" id="pf-telao">
+                    Abrir telão
+                  </button>
+                </div>
+              </div>
+              <div class="rk-bar" style="margin-top: 12px">
+                <span id="pf-start-g" class="row"
+                  ><label for="pf-min" class="hint">Duração</label
+                  ><input
+                    type="number"
+                    id="pf-min"
+                    min="1"
+                    max="600"
+                    value="30"
+                    style="width: 80px"
+                  />
+                  <span class="hint">min</span
+                  ><button class="btn btn-primary" type="button" id="pf-start">
+                    Iniciar competição
+                  </button></span
+                >
+                <span id="pf-run-g" class="row"
+                  ><button class="btn" type="button" id="pf-plus">+5 min</button
+                  ><button class="btn danger" type="button" id="pf-stop">
+                    Encerrar agora
+                  </button></span
+                >
+                <span style="flex: 1"></span>
+                <button class="btn danger" type="button" id="pf-new">
+                  Nova competição
+                </button>
+              </div>
+              <div class="send-panel" id="pf-confirm" hidden></div>
+              <div class="rk-grid" style="margin-top: 14px">
+                <div class="card">
+                  <div class="row spread">
+                    <h4>Ranking</h4>
+                    <span class="hint" id="pf-count"></span>
+                  </div>
+                  <div id="pf-rank"></div>
+                  <div id="pf-late"></div>
+                </div>
+                <div class="card">
+                  <h4>Envios em tempo real</h4>
+                  <ul class="feed" id="pf-feed"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card setup" id="pf-setup" hidden>
+            <h4>Configuração pendente</h4>
+            <p style="font-size: 0.94rem">
+              Esta cópia da página ainda não está ligada a uma planilha: os
+              exercícios abrem em modo de teste e os envios ficam desativados.
+              Para ligar:
+            </p>
+            <ol>
+              <li>
+                Crie uma Planilha Google nova e abra
+                <b>Extensões → Apps Script</b>.
+              </li>
+              <li>
+                Apague o conteúdo do editor, cole o arquivo
+                <code>Codigo.gs</code> e troque <code>CHAVE_PROFESSOR</code> por
+                uma senha sua. Salve.
+              </li>
+              <li>
+                <b>Implantar → Nova implantação</b>, tipo <b>App da Web</b>,
+                executar como <b>Eu</b>, acesso <b>Qualquer pessoa</b>. Autorize
+                e copie a URL que termina em <code>/exec</code>.
+              </li>
+              <li>
+                Abra este arquivo HTML num editor de texto e cole a URL em
+                <code>SCRIPT_URL</code>, no começo do script. Ajuste
+                <code>TURMA</code> se quiser.
+              </li>
+              <li>
+                Publique o arquivo (GitHub Pages, AVA ou outro site) e passe o
+                link aos alunos.
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+    </main>
+    <div class="telao" id="telao" hidden>
+      <div class="telao-top">
+        <div>
+          <span class="lbl">Competição · Árvores AVL</span>
+          <h2>Ranking ao vivo</h2>
+        </div>
+        <div class="row">
+          <span class="state-chip" id="tl-state">—</span
+          ><span class="bigclock" id="tl-clock">--:--</span>
+        </div>
+        <button class="btn" type="button" id="tl-close">
+          Fechar telão (Esc)
+        </button>
+      </div>
+      <ol class="tl-list" id="tl-list"></ol>
+      <div class="tl-ticker" id="tl-ticker"></div>
+    </div>
+
+    <footer class="wrap">
+      Competição de Árvores AVL · Teoria dos Grafos (Aula 11). Exemplos baseados
+      nos slides da aula; a correção oficial é feita no servidor.
+    </footer>
+
+    <script>
+      (() => {
+        "use strict";
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+        const NS = "http://www.w3.org/2000/svg";
+        const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const mkEl = (tag, attrs = {}) => {
+          const e = document.createElementNS(NS, tag);
+          for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+          return e;
+        };
+        const ease = (k) =>
+          k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+        const shuffle = (a) => {
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        };
+        const sg = (f) => (f > 0 ? "+" + f : f < 0 ? "−" + -f : "0");
+
+        /* ================= Desenho animado de árvores ================= */
+        class TreeView {
+          constructor(svg, o = {}) {
+            this.svg = svg;
+            this.W = o.W || 760;
+            this.H = o.H || 300;
+            this.R = o.R || 18;
+            this.nodes = new Map();
+            this.anim = false;
+            this.gE = mkEl("g");
+            this.gN = mkEl("g");
+            this.gX = mkEl("g");
+            svg.append(this.gE, this.gN, this.gX);
+            this.probeEl = mkEl("circle", { r: this.R + 6, class: "probe" });
+            this.probeEl.style.opacity = 0;
+            this.gX.appendChild(this.probeEl);
+            this.arrowG = mkEl("g");
+            this.gX.appendChild(this.arrowG);
+            this.noteBg = mkEl("rect", {
+              class: "tnote-bg",
+              rx: 4,
+              height: 18,
+            });
+            this.noteEl = mkEl("text", { class: "tnote" });
+            this.noteBg.style.display = "none";
+            this.gX.append(this.noteBg, this.noteEl);
+            if (o.onNode)
+              svg.addEventListener("click", (ev) => {
+                const g = ev.target.closest(".tn");
+                if (g) o.onNode(g.dataset.id, +g.dataset.v);
+              });
+          }
+          setView(W, H) {
+            this.W = W;
+            this.H = H;
+            this.svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+          }
+          update(list, o = {}) {
+            const now = performance.now(),
+              dur = reduce ? 0 : (o.dur ?? 650),
+              seen = new Set();
+            for (const it of list) {
+              seen.add(it.id);
+              let n = this.nodes.get(it.id);
+              if (!n) {
+                const g = mkEl("g", { class: "tn" });
+                g.dataset.id = it.id;
+                const c = mkEl("circle", { r: this.R }),
+                  t = mkEl("text"),
+                  b = mkEl("text", { class: "tbadge", y: -this.R - 7 });
+                g.append(c, t, b);
+                this.gN.appendChild(g);
+                const e = mkEl("line", { class: "te" });
+                this.gE.appendChild(e);
+                n = { id: it.id, g, t, b, e, x: it.x, y: it.y };
+                if (o.pop !== false) {
+                  g.classList.add("pop");
+                  setTimeout(() => g.classList.remove("pop"), 700);
+                }
+                this.nodes.set(it.id, n);
+              }
+              n.g.dataset.v = it.label;
+              n.t.textContent = it.label;
+              n.parent = it.parent || null;
+              n.fx = n.x;
+              n.fy = n.y;
+              n.tx = it.x;
+              n.ty = it.y;
+              n.t0 = now;
+              n.dur = dur;
+            }
+            for (const [id, n] of this.nodes)
+              if (!seen.has(id)) {
+                n.g.classList.add("gone");
+                n.e.classList.add("gone");
+                this.nodes.delete(id);
+                setTimeout(() => {
+                  n.g.remove();
+                  n.e.remove();
+                }, 450);
+              }
+            if (o.W || o.H) this.setView(o.W || this.W, o.H || this.H);
+            if (!this.anim) {
+              this.anim = true;
+              requestAnimationFrame((t) => this.frame(t));
+            }
+          }
+          frame(t) {
+            let moving = false;
+            for (const n of this.nodes.values()) {
+              const k = n.dur
+                  ? Math.max(0, Math.min(1, (t - n.t0) / n.dur))
+                  : 1,
+                e = ease(k);
+              n.x = n.fx + (n.tx - n.fx) * e;
+              n.y = n.fy + (n.ty - n.fy) * e;
+              if (k < 1) moving = true;
+              n.g.setAttribute(
+                "transform",
+                `translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`,
+              );
+            }
+            for (const n of this.nodes.values()) {
+              const p = n.parent && this.nodes.get(n.parent);
+              if (!p) {
+                n.e.setAttribute("visibility", "hidden");
+                continue;
+              }
+              n.e.removeAttribute("visibility");
+              const dx = n.x - p.x,
+                dy = n.y - p.y,
+                L = Math.hypot(dx, dy) || 1,
+                R = this.R;
+              n.e.setAttribute("x1", (p.x + (dx / L) * R).toFixed(1));
+              n.e.setAttribute("y1", (p.y + (dy / L) * R).toFixed(1));
+              n.e.setAttribute("x2", (n.x - (dx / L) * R).toFixed(1));
+              n.e.setAttribute("y2", (n.y - (dy / L) * R).toFixed(1));
+            }
+            if (moving) requestAnimationFrame((tt) => this.frame(tt));
+            else this.anim = false;
+          }
+          cls(id, c) {
+            const n = this.nodes.get(id);
+            if (n) n.g.setAttribute("class", "tn" + (c ? " " + c : ""));
+          }
+          badge(id, txt) {
+            const n = this.nodes.get(id);
+            if (n) n.b.textContent = txt == null ? "" : txt;
+          }
+          clear() {
+            for (const n of this.nodes.values()) {
+              this.cls(n.id, "");
+              n.b.textContent = "";
+            }
+            this.probe(null);
+            this.note(null);
+            this.arrow(null);
+          }
+          pos(id) {
+            const n = this.nodes.get(id);
+            return n ? { x: n.tx, y: n.ty } : null;
+          }
+          probe(id) {
+            const p = id && this.pos(id);
+            if (!p) {
+              this.probeEl.style.opacity = 0;
+              return;
+            }
+            this.probeEl.style.opacity = 1;
+            this.probeEl.style.transform = `translate(${p.x}px,${p.y}px)`;
+          }
+          note(id, txt) {
+            const p = id && this.pos(id);
+            if (!p || !txt) {
+              this.noteEl.textContent = "";
+              this.noteBg.style.display = "none";
+              return;
+            }
+            this.noteEl.textContent = txt;
+            const w = txt.length * 7.4 + 10,
+              left = p.x + this.R + 10 + w > this.W;
+            const x = left ? p.x - this.R - 10 - w : p.x + this.R + 10,
+              y = p.y - this.R - 4;
+            this.noteEl.setAttribute("x", x + 5);
+            this.noteEl.setAttribute("y", y + 13);
+            this.noteBg.setAttribute("x", x);
+            this.noteBg.setAttribute("y", y);
+            this.noteBg.setAttribute("width", w);
+            this.noteBg.style.display = "";
+          }
+          // seta curva indicando o sentido da rotação, desenhada sob o nó que gira
+          arrow(spec) {
+            this.arrowG.textContent = "";
+            const p = spec && this.pos(spec.id);
+            if (!p) return;
+            const r = this.R + 16,
+              cx = p.x,
+              cy = p.y,
+              L = spec.dir === "L";
+            const a0 = L ? -20 : 200,
+              a1 = L ? 200 : -20,
+              rad = (d) => (d * Math.PI) / 180;
+            const P = (d) => [
+              cx + r * Math.cos(rad(d)),
+              cy - r * Math.sin(rad(d)),
+            ];
+            const [x0, y0] = P(a0),
+              [x1, y1] = P(a1);
+            this.arrowG.appendChild(
+              mkEl("path", {
+                class: "rotarrow",
+                d: `M${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 1 ${L ? 0 : 1} ${x1.toFixed(1)},${y1.toFixed(1)}`,
+              }),
+            );
+            // direção de percurso no fim do arco (y da tela invertido)
+            const tx = L ? -Math.sin(rad(a1)) : Math.sin(rad(a1)),
+              ty = L ? -Math.cos(rad(a1)) : Math.cos(rad(a1));
+            const hx = x1,
+              hy = y1,
+              s = 10,
+              nx = -ty,
+              ny = tx;
+            this.arrowG.appendChild(
+              mkEl("polygon", {
+                class: "rothead",
+                points: `${(hx + tx * s).toFixed(1)},${(hy + ty * s).toFixed(1)} ${(hx + nx * s * 0.6).toFixed(1)},${(hy + ny * s * 0.6).toFixed(1)} ${(hx - nx * s * 0.6).toFixed(1)},${(hy - ny * s * 0.6).toFixed(1)}`,
+              }),
+            );
+          }
+        }
+
+        /* ================= Árvore binária e AVL ================= */
+        let NID = 0;
+        const newNode = (v) => ({ id: "n" + ++NID, v, l: null, r: null });
+        const h = (n) => (n ? 1 + Math.max(h(n.l), h(n.r)) : 0);
+        const fbOf = (n) => h(n.l) - h(n.r);
+        const clone = (n) =>
+          n ? { id: n.id, v: n.v, l: clone(n.l), r: clone(n.r) } : null;
+        const inorder = (n) => (n ? [...inorder(n.l), n, ...inorder(n.r)] : []);
+        const count = (n) => (n ? 1 + count(n.l) + count(n.r) : 0);
+        const postorder = (n) =>
+          n ? [...postorder(n.l), ...postorder(n.r), n] : [];
+        const unbalanced = (root) =>
+          postorder(root).filter((n) => Math.abs(fbOf(n)) >= 2);
+        function find(root, v) {
+          let n = root;
+          while (n && n.v !== v) n = v < n.v ? n.l : n.r;
+          return n;
+        }
+        function parentOf(root, node) {
+          let p = null,
+            n = root;
+          while (n && n !== node) {
+            p = n;
+            n = node.v < n.v ? n.l : n.r;
+          }
+          return n ? p : null;
+        }
+        function bstFrom(vals) {
+          const T = { root: null };
+          for (const v of vals) plainInsert(T, v);
+          return T;
+        }
+        function plainInsert(T, v) {
+          if (!T.root) {
+            T.root = newNode(v);
+            return T.root;
+          }
+          let n = T.root;
+          for (;;) {
+            if (v === n.v) return null;
+            const s = v < n.v ? "l" : "r";
+            if (!n[s]) {
+              n[s] = newNode(v);
+              return n[s];
+            }
+            n = n[s];
+          }
+        }
+        function replaceChild(T, p, old, nw) {
+          if (!p) T.root = nw;
+          else if (p.l === old) p.l = nw;
+          else p.r = nw;
+        }
+        function rotL(T, a) {
+          const p = parentOf(T.root, a),
+            b = a.r;
+          a.r = b.l;
+          b.l = a;
+          replaceChild(T, p, a, b);
+          return b;
+        }
+        function rotR(T, a) {
+          const p = parentOf(T.root, a),
+            b = a.l;
+          a.l = b.r;
+          b.r = a;
+          replaceChild(T, p, a, b);
+          return b;
+        }
+        function ruleOf(fA, fB) {
+          return fA > 0
+            ? fB > 0
+              ? "p2p1"
+              : fB < 0
+                ? "p2m1"
+                : "z"
+            : fB < 0
+              ? "m2m1"
+              : fB > 0
+                ? "m2p1"
+                : "z";
+        }
+        const RNAME = {
+          RSE: "rotação simples à esquerda",
+          RSD: "rotação simples à direita",
+          RDE: "rotação dupla à esquerda",
+          RDD: "rotação dupla à direita",
+        };
+        function typeOf(a) {
+          const f = fbOf(a),
+            heavyR = f < 0,
+            b = heavyR ? a.r : a.l,
+            fB = fbOf(b);
+          return heavyR ? (fB > 0 ? "RDE" : "RSE") : fB < 0 ? "RDD" : "RSD";
+        }
+
+        /* ---------- gravação de quadros (cada passo vira um quadro animável) ---------- */
+        class Rec {
+          constructor(T) {
+            this.T = T;
+            this.frames = [];
+          }
+          snap(o = {}) {
+            this.frames.push({ root: clone(this.T.root), ...o });
+          }
+        }
+        // uma rotação simples, com quadro antes (seta e subárvore que troca de pai) e depois
+        function rotateRec(
+          T,
+          R,
+          x,
+          dir,
+          extraCls = {},
+          label = "",
+          xCls = "bad",
+          yCls = "pivot",
+        ) {
+          const y = dir === "L" ? x.r : x.l,
+            mover = dir === "L" ? y.l : y.r;
+          const cls = { ...extraCls, [x.id]: xCls, [y.id]: yCls };
+          if (mover) cls[mover.id] = "move";
+          const side = dir === "L" ? "esquerda" : "direita",
+            other = dir === "L" ? "direita" : "esquerda";
+          R.snap({
+            cls,
+            arrow: { id: x.id, dir },
+            ms: 1500,
+            key: true,
+            rule: R.rule,
+            cap:
+              `${label}<b>Rotação à ${side} em ${x.v}</b>: o filho da ${other}, <b>${y.v}</b>, sobe e ocupa o lugar de ${x.v}; ${x.v} desce para a ${side} de ${y.v}.` +
+              (mover
+                ? ` O nó <b class="ko">${mover.v}</b> (filho da ${side} de ${y.v}) passa a ser filho da ${other} de ${x.v}.`
+                : ""),
+          });
+          const top = dir === "L" ? rotL(T, x) : rotR(T, x);
+          const c2 = {
+            ...extraCls,
+            [y.id]: yCls,
+            [x.id]: xCls === "bad" ? "" : xCls,
+          };
+          if (mover) c2[mover.id] = "move";
+          R.snap({
+            cls: c2,
+            ms: 1500,
+            key: true,
+            rule: R.rule,
+            cap: `${label}Depois da rotação: <b>${y.v}</b> é a raiz desta subárvore${mover ? `, e <b class="ko">${mover.v}</b> mudou de pai` : ""}.`,
+          });
+          return top;
+        }
+        // corrige um nó A com |fb| ≥ 2
+        function fixNode(T, R, a) {
+          const fA = fbOf(a),
+            heavyR = fA < 0,
+            b = heavyR ? a.r : a.l,
+            fB = fbOf(b),
+            type = typeOf(a);
+          R.rule = ruleOf(fA, fB);
+          const same =
+            fB === 0
+              ? "Como fb(B) = 0, basta a rotação simples"
+              : Math.sign(fA) === Math.sign(fB)
+                ? "Mesmo sinal: rotação simples"
+                : "Sinais opostos: rotação dupla";
+          R.snap({
+            cls: { [a.id]: "bad", [b.id]: "pivot" },
+            ms: 1700,
+            key: true,
+            rule: R.rule,
+            cap: `<b>A = ${a.v}</b> tem fb ${sg(fA)} (pende para a ${heavyR ? "direita" : "esquerda"}). O filho desse lado é <b>B = ${b.v}</b>, com fb ${sg(fB)}. ${same} → <b>${RNAME[type]}</b>.`,
+          });
+          let top;
+          if (type === "RSE") top = rotateRec(T, R, a, "L");
+          else if (type === "RSD") top = rotateRec(T, R, a, "R");
+          else if (type === "RDE") {
+            rotateRec(
+              T,
+              R,
+              b,
+              "R",
+              { [a.id]: "bad" },
+              "1ª de 2 · ",
+              "pivot",
+              "up",
+            );
+            top = rotateRec(
+              T,
+              R,
+              a,
+              "L",
+              { [b.id]: "pivot" },
+              "2ª de 2 · ",
+              "bad",
+              "up",
+            );
+          } else {
+            rotateRec(
+              T,
+              R,
+              b,
+              "L",
+              { [a.id]: "bad" },
+              "1ª de 2 · ",
+              "pivot",
+              "up",
+            );
+            top = rotateRec(
+              T,
+              R,
+              a,
+              "R",
+              { [b.id]: "pivot" },
+              "2ª de 2 · ",
+              "bad",
+              "up",
+            );
+          }
+          R.snap({
+            cls: { [top.id]: "ok" },
+            ms: 1300,
+            key: true,
+            rule: R.rule,
+            cap: `Subárvore balanceada: a raiz agora é <b>${top.v}</b>, com fb ${sg(fbOf(top))}.`,
+          });
+          R.rule = null;
+          return { top, type, a: a.v, b: b.v, fA, fB };
+        }
+        // inserção com quadros
+        function insertRec(T, R, v, balance = true) {
+          const res = { v, rots: [] };
+          let n = T.root;
+          const path = [];
+          if (!n) {
+            T.root = newNode(v);
+            R.snap({
+              cls: { [T.root.id]: "new" },
+              key: true,
+              ms: 1000,
+              cap: `<b>${v}</b> entra em uma árvore vazia e vira a raiz. Realizar balanceamento? Não.`,
+            });
+            res.node = T.root;
+            return res;
+          }
+          while (n) {
+            if (v === n.v) {
+              R.snap({
+                probe: n.id,
+                cls: { [n.id]: "path" },
+                ms: 1100,
+                cap: `<b>${v}</b> já está na árvore: nada a inserir.`,
+              });
+              res.dup = true;
+              return res;
+            }
+            path.push(n);
+            const go = v < n.v ? "esq" : "dir";
+            R.snap({
+              probe: n.id,
+              cls: Object.fromEntries(path.map((p) => [p.id, "path"])),
+              note: {
+                id: n.id,
+                txt: `${v} ${v < n.v ? "<" : ">"} ${n.v} → ${go}`,
+              },
+              ms: 650,
+              cap: `Inserindo <b>${v}</b>: ${v} é ${v < n.v ? "menor" : "maior"} que ${n.v}, então segue para a ${v < n.v ? "esquerda" : "direita"}.`,
+            });
+            n = v < n.v ? n.l : n.r;
+          }
+          const p = path[path.length - 1],
+            node = newNode(v);
+          if (v < p.v) p.l = node;
+          else p.r = node;
+          res.node = node;
+          R.snap({
+            cls: { [node.id]: "new" },
+            key: true,
+            ms: 1100,
+            cap: `<b>${v}</b> vira filho da ${v < p.v ? "esquerda" : "direita"} de ${p.v}. Agora recalculamos os fb no caminho de volta até a raiz.`,
+          });
+          if (!balance) return res;
+          for (let i = path.length - 1; i >= 0; i--) {
+            const a = path[i],
+              f = fbOf(a);
+            R.snap({
+              cls: {
+                [node.id]: "new",
+                [a.id]: Math.abs(f) >= 2 ? "bad" : "check",
+              },
+              ms: Math.abs(f) >= 2 ? 1300 : 750,
+              cap: `fb(${a.v}) = h(esq) − h(dir) = ${h(a.l)} − ${h(a.r)} = <b>${sg(f)}</b>${Math.abs(f) >= 2 ? ": desbalanceado! Realizar balanceamento? Sim." : "."}`,
+            });
+            if (Math.abs(f) >= 2) {
+              res.rots.push(fixNode(T, R, a));
+              break;
+            }
+          }
+          R.snap({
+            key: true,
+            ms: 900,
+            cap: res.rots.length
+              ? `Inserção de <b>${v}</b> concluída com ${RNAME[res.rots[0].type]} em ${res.rots[0].a}. Todos os fb estão entre −1 e +1.`
+              : `Inserção de <b>${v}</b> concluída. Realizar balanceamento? Não: todos os fb estão entre −1 e +1.`,
+          });
+          return res;
+        }
+        // remoção com quadros (dois filhos: sucessor)
+        function removeRec(T, R, v, balance = true) {
+          const res = { v, rots: [] };
+          let n = T.root;
+          const path = [];
+          while (n && n.v !== v) {
+            path.push(n);
+            R.snap({
+              probe: n.id,
+              cls: Object.fromEntries(path.map((p) => [p.id, "path"])),
+              note: {
+                id: n.id,
+                txt: `${v} ${v < n.v ? "<" : ">"} ${n.v} → ${v < n.v ? "esq" : "dir"}`,
+              },
+              ms: 650,
+              cap: `Procurando <b>${v}</b>…`,
+            });
+            n = v < n.v ? n.l : n.r;
+          }
+          if (!n) {
+            R.snap({ ms: 1100, cap: `<b>${v}</b> não está na árvore.` });
+            res.none = true;
+            return res;
+          }
+          const t = n,
+            p = parentOf(T.root, t);
+          let lowest;
+          if (!t.l && !t.r) {
+            R.snap({
+              cls: { [t.id]: "del" },
+              probe: t.id,
+              ms: 1200,
+              key: true,
+              cap: `<b>${v}</b> é uma folha (sem filhos): basta retirá-lo.`,
+            });
+            replaceChild(T, p, t, null);
+            lowest = p;
+            res.kase = "folha";
+          } else if (!t.l || !t.r) {
+            const c = t.l || t.r;
+            R.snap({
+              cls: { [t.id]: "del", [c.id]: "move" },
+              probe: t.id,
+              ms: 1300,
+              key: true,
+              cap: `<b>${v}</b> tem um filho só (${c.v}): o filho sobe e ocupa o lugar dele.`,
+            });
+            replaceChild(T, p, t, c);
+            lowest = p;
+            res.kase = "1 filho";
+          } else {
+            R.snap({
+              cls: { [t.id]: "del" },
+              probe: t.id,
+              ms: 1300,
+              key: true,
+              cap: `<b>${v}</b> tem dois filhos: ele será trocado pelo <b>sucessor</b>, o menor valor da subárvore direita.`,
+            });
+            let s = t.r,
+              sp = t;
+            const trail = [s];
+            while (s.l) {
+              sp = s;
+              s = s.l;
+              trail.push(s);
+            }
+            trail.forEach((x, i) =>
+              R.snap({
+                cls: {
+                  [t.id]: "del",
+                  ...Object.fromEntries(
+                    trail.slice(0, i + 1).map((q) => [q.id, "path"]),
+                  ),
+                },
+                probe: x.id,
+                ms: 600,
+                cap: `Descendo pela esquerda na subárvore direita: ${x.v}${x.l ? "" : " não tem filho à esquerda, então é o sucessor"}.`,
+              }),
+            );
+            R.snap({
+              cls: { [t.id]: "del", [s.id]: "succ" },
+              ms: 1200,
+              key: true,
+              cap: `O sucessor é <b>${s.v}</b>. Ele sai de onde está e ocupa o lugar de ${v}.`,
+            });
+            if (sp !== t) {
+              sp.l = s.r;
+              s.r = t.r;
+            }
+            s.l = t.l;
+            replaceChild(T, p, t, s);
+            lowest = sp !== t ? sp : s;
+            res.kase = "2 filhos";
+            res.succ = s.v;
+          }
+          R.snap({
+            key: true,
+            ms: 1100,
+            cap: `<b>${v}</b> removido. Agora recalculamos os fb do ponto da remoção até a raiz.`,
+          });
+          if (!balance || !lowest) {
+            R.snap({
+              ms: 800,
+              cap: T.root
+                ? `Remoção de <b>${v}</b> concluída.`
+                : "A árvore ficou vazia.",
+            });
+            return res;
+          }
+          const chain = [];
+          let q = T.root;
+          while (q) {
+            chain.push(q);
+            if (q === lowest) break;
+            q = lowest.v < q.v ? q.l : q.r;
+          }
+          for (let i = chain.length - 1; i >= 0; i--) {
+            const a = chain[i],
+              f = fbOf(a);
+            R.snap({
+              cls: { [a.id]: Math.abs(f) >= 2 ? "bad" : "check" },
+              ms: Math.abs(f) >= 2 ? 1300 : 700,
+              cap: `fb(${a.v}) = ${h(a.l)} − ${h(a.r)} = <b>${sg(f)}</b>${Math.abs(f) >= 2 ? ": desbalanceado! Realizar balanceamento? Sim." : "."}`,
+            });
+            if (Math.abs(f) >= 2) res.rots.push(fixNode(T, R, a));
+          }
+          R.snap({
+            key: true,
+            ms: 900,
+            cap: `Remoção de <b>${v}</b> concluída${res.rots.length ? ` com ${res.rots.map((r) => RNAME[r.type] + " em " + r.a).join(" e ")}` : " sem rotações"}.`,
+          });
+          return res;
+        }
+        // balancear uma ABB qualquer, sempre corrigindo o nó desbalanceado mais baixo
+        function fixAllRec(T, R) {
+          const rots = [];
+          for (let it = 0; it < 80; it++) {
+            const bad = unbalanced(T.root)[0];
+            if (!bad) break;
+            R.snap({
+              cls: { [bad.id]: "bad" },
+              ms: 1200,
+              key: true,
+              cap: `O nó desbalanceado mais baixo é <b>${bad.v}</b> (fb ${sg(fbOf(bad))}). Corrigimos de baixo para cima.`,
+            });
+            rots.push(fixNode(T, R, bad));
+          }
+          R.snap({
+            key: true,
+            ms: 900,
+            cap: unbalanced(T.root).length
+              ? "Ainda há nós desbalanceados."
+              : `Pronto: a árvore é AVL${rots.length ? ` depois de ${rots.length} correção(ões)` : ""}.`,
+          });
+          return rots;
+        }
+
+        /* ---------- layout e desenho de quadros ---------- */
+        function layBin(root, o = {}) {
+          const hh = h(root),
+            base0 = o.W || 760,
+            span = base0 - 60;
+          // árvore "de livro": cada nível divide o espaço pela metade (como nas figuras dos slides), se couber sem sobrepor
+          if (!o.inorder && hh > 0 && span / Math.pow(2, hh - 1) >= 40) {
+            const top = 44,
+              dy = o.dy || 62,
+              nodes = [];
+            (function walk(n, d, x, off, parent) {
+              if (!n) return;
+              nodes.push({
+                id: n.id,
+                label: String(n.v),
+                parent: parent ? parent.id : null,
+                x,
+                y: top + d * dy,
+              });
+              walk(n.l, d + 1, x - off, off / 2, n);
+              walk(n.r, d + 1, x + off, off / 2, n);
+            })(root, 0, base0 / 2, span / 4, null);
+            return { nodes, W: base0, H: top + (hh - 1) * dy + 34 };
+          }
+          const out = [];
+          let i = 0;
+          (function walk(n, d, parent) {
+            if (!n) return;
+            walk(n.l, d + 1, n);
+            out.push({ n, d, i: i++, parent });
+            walk(n.r, d + 1, n);
+          })(root, 0, null);
+          const cnt = Math.max(1, i),
+            pad = 30,
+            base = o.W || 760;
+          const W = Math.max(base, (cnt - 1) * 40 + 2 * pad);
+          const dx =
+              cnt > 1 ? Math.min(o.maxDx || 62, (W - 2 * pad) / (cnt - 1)) : 0,
+            x0 = (W - dx * (cnt - 1)) / 2,
+            top = 44,
+            dy = o.dy || 62;
+          const maxD = Math.max(0, ...out.map((x) => x.d));
+          return {
+            nodes: out.map((x) => ({
+              id: x.n.id,
+              label: String(x.n.v),
+              parent: x.parent ? x.parent.id : null,
+              x: x0 + x.i * dx,
+              y: top + x.d * dy,
+            })),
+            W,
+            H: top + maxD * dy + 34,
+          };
+        }
+        function drawFrame(tv, F, o = {}) {
+          const L = layBin(F.root, o);
+          tv.update(L.nodes, { W: L.W, H: Math.max(L.H, o.H || 200) });
+          tv.clear();
+          for (const n of inorder(F.root)) {
+            const f = fbOf(n),
+              c = [(F.cls && F.cls[n.id]) || ""];
+            const hide = F.hideFb || o.hideFb;
+            if (!hide && Math.abs(f) >= 2) c.push("unb");
+            if (o.extraCls && o.extraCls[n.id]) c.push(o.extraCls[n.id]);
+            tv.cls(n.id, c.join(" ").trim());
+            tv.badge(n.id, hide ? "" : sg(f));
+          }
+          if (F.probe) tv.probe(F.probe);
+          if (F.note) tv.note(F.note.id, F.note.txt);
+          if (F.arrow) tv.arrow(F.arrow);
+        }
+        // reprodutor de quadros com pausa, passo e pular
+        class FramePlayer {
+          constructor(tv, o = {}) {
+            this.tv = tv;
+            this.o = o;
+            this.q = [];
+            this.i = 0;
+            this.timer = null;
+            this.paused = false;
+            this.speed = 1;
+            this.last = null;
+          }
+          push(frames) {
+            this.q.push(...frames);
+            if (!this.timer && !this.paused) this.next();
+            this.state();
+          }
+          next() {
+            if (this.i >= this.q.length) {
+              this.timer = null;
+              this.state();
+              return;
+            }
+            const F = this.q[this.i++];
+            this.show(F);
+            this.state();
+            this.timer = setTimeout(
+              () => {
+                this.timer = null;
+                if (!this.paused) this.next();
+                else this.state();
+              },
+              reduce ? 300 : (F.ms || 800) * this.speed,
+            );
+          }
+          show(F) {
+            this.last = F;
+            drawFrame(this.tv, F, this.o);
+            if (this.o.onFrame) this.o.onFrame(F, this);
+          }
+          pause() {
+            this.paused = true;
+            clearTimeout(this.timer);
+            this.timer = null;
+            this.state();
+          }
+          resume() {
+            this.paused = false;
+            if (!this.timer) this.next();
+            this.state();
+          }
+          step() {
+            this.paused = true;
+            clearTimeout(this.timer);
+            this.timer = null;
+            if (this.i < this.q.length) this.show(this.q[this.i++]);
+            this.state();
+          }
+          back() {
+            this.paused = true;
+            clearTimeout(this.timer);
+            this.timer = null;
+            if (this.i > 1) {
+              this.i--;
+              this.show(this.q[this.i - 1]);
+            }
+            this.state();
+          }
+          first() {
+            this.paused = true;
+            clearTimeout(this.timer);
+            this.timer = null;
+            if (this.q.length) {
+              this.i = 1;
+              this.show(this.q[0]);
+            }
+            this.state();
+          }
+          toggle() {
+            if (this.paused || !this.timer) {
+              if (this.i >= this.q.length && this.q.length) {
+                this.i = 0;
+              }
+              this.resume();
+            } else this.pause();
+          }
+          // liga uma barra de botões [data-pc] a este reprodutor
+          attach(el) {
+            this.ctrl = el;
+            el.addEventListener("click", (e) => {
+              const b = e.target.closest("[data-pc]");
+              if (!b || b.disabled) return;
+              ({
+                first: () => this.first(),
+                back: () => this.back(),
+                toggle: () => this.toggle(),
+                step: () => this.step(),
+                end: () => this.finish(),
+              })[b.dataset.pc]();
+            });
+            this.state();
+            return this;
+          }
+          finish() {
+            clearTimeout(this.timer);
+            this.timer = null;
+            if (this.i < this.q.length) {
+              this.i = this.q.length;
+              this.show(this.q[this.q.length - 1]);
+            }
+            this.paused = false;
+            this.state();
+          }
+          reset() {
+            clearTimeout(this.timer);
+            this.timer = null;
+            this.q = [];
+            this.i = 0;
+            this.paused = false;
+            this.state();
+          }
+          get busy() {
+            return this.i < this.q.length;
+          }
+          state() {
+            if (this.ctrl) {
+              const c = this.ctrl,
+                n = this.q.length,
+                playing = !!this.timer && !this.paused;
+              const q = (k) => c.querySelector(`[data-pc="${k}"]`);
+              q("first").disabled = q("back").disabled = this.i <= 1;
+              q("step").disabled = q("end").disabled = this.i >= n;
+              q("toggle").textContent = playing ? "❚❚" : "▶";
+              q("toggle").disabled = !n;
+              q("toggle").title = playing ? "Pausar" : "Reproduzir";
+              const ct = c.querySelector(".pc-count");
+              if (ct)
+                ct.textContent = n
+                  ? `passo ${Math.max(1, this.i)} de ${n}`
+                  : "";
+            }
+            if (this.o.onState) this.o.onState(this);
+          }
+        }
+        const STRIP = `<button class="btn" type="button" data-pc="first" title="Primeiro passo" aria-label="Primeiro passo">⏮</button><button class="btn" type="button" data-pc="back" title="Passo anterior" aria-label="Passo anterior">◀</button><button class="btn btn-primary" type="button" data-pc="toggle" aria-label="Reproduzir ou pausar">▶</button><button class="btn" type="button" data-pc="step" title="Próximo passo" aria-label="Próximo passo">▶|</button><button class="btn" type="button" data-pc="end" title="Último passo" aria-label="Último passo">⏭</button><span class="pc-count"></span>`;
+        document.querySelectorAll(".pstrip[data-strip]").forEach((el) => {
+          el.innerHTML = STRIP;
+        });
+
+        /* ---------- sequências ---------- */
+        const SEQ = {
+          slides: [1, 2, 3, 10, 4, 5, 9, 7, 8],
+          e1: [1, 2, 3, 10, 4, 5, 9, 7],
+          d1: [35, 39, 51, 20, 13, 28, 22, 32, 25, 33],
+          d2: [15, 27, 49, 10, 8, 67, 59, 9, 13, 20, 14],
+          asc: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          desc: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+          rem: [4, 2, 7, 1, 3],
+          ex1: [57, 45, 77, 13, 60, 84, 9, 25, 78],
+          ex2: [57, 45, 13, 9, 25, 60],
+          t1: [27, 36, 15, 16, 7, 42, 30],
+          t2: [75, 17, 89, 60, 76, 39, 97, 21, 100],
+          t3: [14, 5, 1, 31, 9, 12, 6, 19, 45, 11, 22],
+        };
+        function randomVals(n, lo = 1, hi = 99) {
+          const s = new Set();
+          while (s.size < n)
+            s.add(lo + Math.floor(Math.random() * (hi - lo + 1)));
+          return [...s];
+        }
+        function avlFrom(vals) {
+          const T = { root: null };
+          for (const v of vals) {
+            const R = new Rec(T);
+            insertRec(T, R, v, true);
+          }
+          return T;
+        }
+        function parseSeq(s) {
+          return (String(s).match(/-?\d+/g) || [])
+            .map(Number)
+            .filter((x) => Number.isFinite(x) && x >= 0 && x <= 999);
+        }
+
+        /* ================= Seções recolhíveis ================= */
+        const SKEY = "competicao-avl-secoes";
+        let closedSet = new Set();
+        try {
+          closedSet = new Set(JSON.parse(localStorage.getItem(SKEY) || "[]"));
+        } catch (_) {}
+        function setSec(sec, open) {
+          sec.classList.toggle("closed", !open);
+          const b = sec.querySelector(".collapse");
+          b.setAttribute("aria-expanded", String(open));
+          b.querySelector(".ct").textContent = open
+            ? "Esconder seção"
+            : "Mostrar seção";
+          if (open) closedSet.delete(sec.id);
+          else closedSet.add(sec.id);
+          try {
+            localStorage.setItem(SKEY, JSON.stringify([...closedSet]));
+          } catch (_) {}
+        }
+        $$("[data-sec]").forEach((sec) => {
+          sec
+            .querySelector(".collapse")
+            .addEventListener("click", () =>
+              setSec(sec, sec.classList.contains("closed")),
+            );
+          if (closedSet.has(sec.id)) setSec(sec, false);
+        });
+        $("#all-close").addEventListener("click", () =>
+          $$("[data-sec]").forEach((s) => setSec(s, false)),
+        );
+        $("#all-open").addEventListener("click", () =>
+          $$("[data-sec]").forEach((s) => setSec(s, true)),
+        );
+        $$("nav.toc a").forEach((a) =>
+          a.addEventListener("click", () => {
+            const s = document.querySelector(a.getAttribute("href"));
+            if (s && s.classList.contains("closed")) setSec(s, true);
+          }),
+        );
+
+        /* ================= 1. Demonstração ================= */
+        const D = {
+          seq: SEQ.ex1,
+          idx: 0,
+          bst: { root: null },
+          avl: { root: null },
+          playing: false,
+          rots: new Set(),
+        };
+        const dBst = new TreeView($("#d-bst"), { W: 560 }),
+          dAvl = new TreeView($("#d-avl"), { W: 560 });
+        const dPlayer = new FramePlayer(dAvl, {
+          W: 560,
+          H: 260,
+          maxDx: 52,
+          dy: 56,
+          onFrame: (F) => {
+            if (F.cap) $("#d-cap").innerHTML = F.cap;
+          },
+          onState: () => dUi(),
+        });
+        function dDrawBst() {
+          drawFrame(
+            dBst,
+            { root: D.bst.root, hideFb: true },
+            { W: 560, H: 260, maxDx: 52, dy: 56 },
+          );
+        }
+        function dUi() {
+          $("#d-chips").innerHTML = D.seq
+            .map(
+              (v, i) =>
+                `<span class="vchip ${i < D.idx ? "done" : ""} ${i === D.idx - 1 && dPlayer.busy ? "cur" : ""} ${D.rots.has(i) ? "rot" : ""}">${v}</span>`,
+            )
+            .join("");
+          const hb = h(D.bst.root),
+            ha = h(D.avl.root),
+            n = count(D.avl.root);
+          $("#d-stats").innerHTML =
+            `<span class="stat">nós<b>${n}</b></span><span class="stat ${hb > ha ? "badv" : ""}">altura ABB<b>${hb}</b></span><span class="stat good">altura AVL<b>${ha}</b></span><span class="stat">mínima possível<b>${n ? Math.ceil(Math.log2(n + 1)) : 0}</b></span>`;
+          $("#d-step").disabled = D.idx >= D.seq.length;
+          $("#d-back").disabled = $("#d-first").disabled = D.idx === 0;
+          $("#d-full").disabled = D.idx >= D.seq.length;
+        }
+        // reconstrói as duas árvores com os k primeiros valores (sem animação de passos; os nós deslizam para o lugar)
+        function dGoto(k, msg) {
+          D.playing = false;
+          dPlayer.reset();
+          D.idx = Math.max(0, Math.min(D.seq.length, k));
+          D.bst = { root: null };
+          D.avl = { root: null };
+          D.rots = new Set();
+          D.seq.slice(0, D.idx).forEach((v, i) => {
+            plainInsert(D.bst, v);
+            const R = new Rec(D.avl);
+            if (insertRec(D.avl, R, v, true).rots.length) D.rots.add(i);
+          });
+          dDrawBst();
+          drawFrame(
+            dAvl,
+            { root: D.avl.root },
+            { W: 560, H: 260, maxDx: 52, dy: 56 },
+          );
+          if (msg) $("#d-cap").innerHTML = msg;
+          dUi();
+        }
+        function dStep() {
+          if (D.idx >= D.seq.length) return false;
+          if (dPlayer.busy) dPlayer.finish();
+          const v = D.seq[D.idx];
+          plainInsert(D.bst, v);
+          dDrawBst();
+          const R = new Rec(D.avl);
+          const r = insertRec(D.avl, R, v, true);
+          if (r.rots.length) D.rots.add(D.idx);
+          D.idx++;
+          dPlayer.push(
+            R.frames
+              .filter((F) => F.key)
+              .map((F) => ({ ...F, ms: (F.ms || 900) * 0.8 })),
+          );
+          return true;
+        }
+        async function dPlay() {
+          D.playing = true;
+          while (D.playing && D.idx < D.seq.length) {
+            dStep();
+            await new Promise((res) => {
+              const chk = () =>
+                !dPlayer.busy || !D.playing ? res() : setTimeout(chk, 120);
+              chk();
+            });
+            await new Promise((res) => setTimeout(res, reduce ? 50 : 350));
+          }
+          D.playing = false;
+          dUi();
+          if (D.idx >= D.seq.length)
+            $("#d-cap").innerHTML =
+              `Fim: com ${D.seq.length} valores, a ABB comum ficou com altura <b>${h(D.bst.root)}</b> e a AVL com altura <b>${h(D.avl.root)}</b>. Buscar um valor custa no máximo essa quantidade de comparações. Os valores sublinhados em vermelho provocaram rotações.`;
+        }
+        function dReset(full) {
+          D.playing = false;
+          dPlayer.reset();
+          D.idx = 0;
+          D.bst = { root: null };
+          D.avl = { root: null };
+          D.rots = new Set();
+          if (full) {
+            D.seq.forEach((v, i) => {
+              plainInsert(D.bst, v);
+              const R = new Rec(D.avl);
+              if (insertRec(D.avl, R, v, true).rots.length) D.rots.add(i);
+            });
+            D.idx = D.seq.length;
+            $("#d-cap").innerHTML =
+              `As duas árvores prontas com ${D.seq.join(", ")}. ABB: altura <b>${h(D.bst.root)}</b>. AVL: altura <b>${h(D.avl.root)}</b>. Clique em "Construir do zero" para ver cada inserção e cada rotação.`;
+          } else $("#d-cap").textContent = "As árvores começam vazias.";
+          dDrawBst();
+          drawFrame(
+            dAvl,
+            { root: D.avl.root },
+            { W: 560, H: 260, maxDx: 52, dy: 56 },
+          );
+          dUi();
+        }
+        $("#d-build").addEventListener("click", () => {
+          dReset(false);
+          setTimeout(dPlay, 300);
+        });
+        $("#d-step").addEventListener("click", () => {
+          D.playing = false;
+          dStep();
+          dUi();
+          if (D.idx >= D.seq.length)
+            setTimeout(() => {
+              if (!dPlayer.busy) dUi();
+            }, 50);
+        });
+        $("#d-full").addEventListener("click", () => dReset(true));
+        $("#d-back").addEventListener("click", () => {
+          const v = D.seq[D.idx - 1];
+          dGoto(
+            D.idx - 1,
+            `Voltamos para antes da inserção de <b>${v}</b>. Clique em "Próximo valor" para vê-la de novo.`,
+          );
+        });
+        $("#d-first").addEventListener("click", () =>
+          dGoto(0, "As árvores começam vazias. Avance valor por valor."),
+        );
+        $("#d-seq").addEventListener("change", (e) => {
+          D.seq =
+            e.target.value === "rnd" ? randomVals(10) : SEQ[e.target.value];
+          dReset(true);
+        });
+
+        /* ================= 2. Fator de balanceamento ================= */
+        const F2 = { T: null, sel: null, train: null, ok: 0, tot: 0 };
+        const fTv = new TreeView($("#f-svg"), {
+          W: 760,
+          onNode: (id) => fSelect(id),
+        });
+        function fLoad() {
+          const k = $("#f-tree").value;
+          F2.T =
+            k === "avl"
+              ? avlFrom(SEQ.slides)
+              : k === "rnd"
+                ? bstFrom(randomVals(9, 10, 99))
+                : bstFrom(SEQ[k]);
+          F2.sel = null;
+          F2.train = null;
+          $("#f-opts").hidden = true;
+          $("#f-fb").hidden = true;
+          $("#f-info").textContent = "Clique em um nó da árvore.";
+          fDraw();
+        }
+        function subtreeIds(n) {
+          return inorder(n).map((x) => x.id);
+        }
+        function fDraw() {
+          const extra = {};
+          const s = F2.sel && inorder(F2.T.root).find((n) => n.id === F2.sel);
+          if (s) {
+            subtreeIds(s.l).forEach((id) => (extra[id] = "subL"));
+            subtreeIds(s.r).forEach((id) => (extra[id] = "subR"));
+            extra[s.id] = "sel";
+          }
+          const tr =
+            F2.train && inorder(F2.T.root).find((n) => n.id === F2.train);
+          if (tr) extra[tr.id] = "sel check";
+          drawFrame(
+            fTv,
+            { root: F2.T.root, hideFb: !$("#f-show").checked || !!F2.train },
+            { W: 760, H: 240, extraCls: extra },
+          );
+          const bad = unbalanced(F2.T.root);
+          $("#f-verdict").innerHTML =
+            `<span class="stat">altura<b>${h(F2.T.root)}</b></span>` +
+            (bad.length
+              ? `<span class="stat badv">não é AVL<b>${bad.map((n) => n.v).join(", ")}</b></span>`
+              : `<span class="stat good">é AVL<b>✓</b></span>`);
+        }
+        function fSelect(id) {
+          if (F2.train) return;
+          F2.sel = id;
+          const n = inorder(F2.T.root).find((x) => x.id === id);
+          if (!n) return;
+          const hl = h(n.l),
+            hr = h(n.r),
+            f = hl - hr;
+          const desc =
+            f === 0
+              ? "equilibrado"
+              : Math.abs(f) === 1
+                ? `pende levemente para a ${f > 0 ? "esquerda" : "direita"} (permitido)`
+                : `<b class="ki">desbalanceado</b>, pendendo para a ${f > 0 ? "esquerda" : "direita"}`;
+          $("#f-info").innerHTML =
+            `Nó <b>${n.v}</b><br><span class="kv">h(esq) = ${hl}</span>${n.l ? ` (subárvore de ${n.l.v})` : " (vazia)"} · <span class="ke">h(dir) = ${hr}</span>${n.r ? ` (subárvore de ${n.r.v})` : " (vazia)"}<br><span class="big">fb(${n.v}) = ${hl} − ${hr} = ${sg(f)}</span><br>${desc}.`;
+          fDraw();
+        }
+        $("#f-tree").addEventListener("change", fLoad);
+        $("#f-show").addEventListener("change", fDraw);
+        $("#f-train").addEventListener("click", () => {
+          const all = inorder(F2.T.root);
+          const n = all[Math.floor(Math.random() * all.length)];
+          F2.train = n.id;
+          F2.sel = null;
+          $("#f-opts").hidden = false;
+          $("#f-fb").hidden = false;
+          $("#f-fb").className = "fb";
+          $("#f-fb").textContent = `Quanto vale fb(${n.v})?`;
+          $("#f-opts").innerHTML = [-3, -2, -1, 0, 1, 2, 3]
+            .map((x) => `<button type="button" data-x="${x}">${sg(x)}</button>`)
+            .join("");
+          fDraw();
+        });
+        $("#f-opts").addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (!b || b.disabled || !F2.train) return;
+          const n = inorder(F2.T.root).find((x) => x.id === F2.train),
+            f = fbOf(n),
+            x = +b.dataset.x;
+          F2.tot++;
+          if (x === f) F2.ok++;
+          $$("#f-opts button").forEach((y) => {
+            y.disabled = true;
+            if (+y.dataset.x === f) y.classList.add("right");
+          });
+          if (x !== f) b.classList.add("wrong");
+          $("#f-fb").className = "fb " + (x === f ? "ok" : "bad");
+          $("#f-fb").innerHTML =
+            `<b>${x === f ? "Correto!" : "Não é esse."}</b> fb(${n.v}) = h(esq) − h(dir) = ${h(n.l)} − ${h(n.r)} = ${sg(f)}.`;
+          $("#f-score").textContent = `${F2.ok} de ${F2.tot} certos`;
+          F2.train = null;
+          F2.sel = n.id;
+          fDraw();
+        });
+
+        /* ================= 3. Rotações ================= */
+        function fromNested(a) {
+          if (!a) return null;
+          const n = newNode(a[0]);
+          n.l = fromNested(a[1]);
+          n.r = fromNested(a[2]);
+          return n;
+        }
+        const CASES = {
+          rse: {
+            t: [10, null, [12, null, [14]]],
+            src: "Slide 10",
+            how: [
+              "O filho da direita (B) vira a nova raiz da subárvore.",
+              "A raiz original (A) vira filho da esquerda da nova raiz.",
+            ],
+          },
+          rsd: {
+            t: [8, [6, [4]], null],
+            src: "Slide 11",
+            how: [
+              "O filho da esquerda (B) vira a nova raiz da subárvore.",
+              "A raiz original (A) vira filho da direita da nova raiz.",
+            ],
+          },
+          rde: {
+            t: [10, null, [12, [11], null]],
+            src: "Slide 12",
+            how: [
+              'A pende para a direita, mas B pende para a esquerda: os dois estão "tortos".',
+              "1ª rotação: à direita em B, para alinhar A, C e B.",
+              "2ª rotação: à esquerda em A, como na rotação simples.",
+            ],
+          },
+          rdd: {
+            t: [8, [4, null, [6]], null],
+            src: "Slide 13",
+            how: [
+              "A pende para a esquerda, mas B pende para a direita.",
+              "1ª rotação: à esquerda em B.",
+              "2ª rotação: à direita em A.",
+            ],
+          },
+          ese: {
+            t: [10, null, [12, [11], [14]]],
+            src: "Slide 15",
+            how: [
+              "O filho da direita (12) vira a nova raiz.",
+              "O filho da esquerda de 12 (11) vira filho da direita de 10. Ele cabe ali: é maior que 10 e menor que 12.",
+              "10 vira filho da esquerda de 12.",
+              "Aqui fb(B) = 0: situação típica de remoção, resolvida com rotação simples.",
+            ],
+          },
+          esd: {
+            t: [8, [6, [4], [7]], null],
+            src: "Slide 16",
+            how: [
+              "O filho da esquerda (6) vira a nova raiz.",
+              "O filho da direita de 6 (7) vira filho da esquerda de 8.",
+              "8 vira filho da direita de 6.",
+              "Aqui também fb(B) = 0: rotação simples.",
+            ],
+          },
+        };
+        const RT = { frames: [], i: 0, timer: null, key: "rse" };
+        const rTv = new TreeView($("#r-svg"), { W: 400 });
+        function rLoad(k) {
+          RT.key = k;
+          const C = CASES[k];
+          const T = { root: fromNested(C.t) };
+          const R = new Rec(T);
+          const a = unbalanced(T.root)[0];
+          R.snap({
+            cls: { [a.id]: "bad" },
+            cap: `Situação inicial. Os números acima dos nós são os fb. O nó <b>${a.v}</b> tem fb ${sg(fbOf(a))}: a árvore precisa de balanceamento.`,
+          });
+          fixNode(T, R, a);
+          R.snap({
+            cap: `Resultado final: todos os nós com fb entre −1 e +1. O percurso em ordem continua ${inorder(
+              T.root,
+            )
+              .map((n) => n.v)
+              .join(", ")}.`,
+          });
+          RT.frames = R.frames;
+          rStop();
+          rShow(0);
+          $$("#r-case button").forEach((b) =>
+            b.setAttribute("aria-pressed", String(b.dataset.k === k)),
+          );
+          $("#r-howto").innerHTML = C.how.map((s) => `<li>${s}</li>`).join("");
+          $("#r-src").textContent = `Exemplo do ${C.src.toLowerCase()}`;
+        }
+        function rShow(i) {
+          RT.i = Math.max(0, Math.min(RT.frames.length - 1, i));
+          const F = RT.frames[RT.i];
+          drawFrame(rTv, F, { W: 400, H: 220, maxDx: 70, dy: 62 });
+          $("#r-cap").innerHTML = F.cap || "";
+          $("#r-count").textContent =
+            `Passo ${RT.i + 1} de ${RT.frames.length}`;
+          $$("#r-rules tr[data-r]").forEach((tr) =>
+            tr.classList.toggle("on", tr.dataset.r === F.rule),
+          );
+          $("#r-prev").disabled = $("#r-first").disabled = RT.i === 0;
+          $("#r-next").disabled = RT.i === RT.frames.length - 1;
+        }
+        function rStop() {
+          clearTimeout(RT.timer);
+          RT.timer = null;
+          $("#r-play").textContent = "▶ Reproduzir";
+        }
+        function rTick() {
+          if (RT.i >= RT.frames.length - 1) {
+            rStop();
+            return;
+          }
+          rShow(RT.i + 1);
+          RT.timer = setTimeout(rTick, reduce ? 800 : 2600);
+        }
+        $("#r-case").addEventListener("click", (e) => {
+          const b = e.target.closest("button");
+          if (b) rLoad(b.dataset.k);
+        });
+        $("#r-next").addEventListener("click", () => {
+          rStop();
+          rShow(RT.i + 1);
+        });
+        $("#r-prev").addEventListener("click", () => {
+          rStop();
+          rShow(RT.i - 1);
+        });
+        $("#r-first").addEventListener("click", () => {
+          rStop();
+          rShow(0);
+        });
+        $("#r-play").addEventListener("click", () => {
+          if (RT.timer) {
+            rStop();
+            return;
+          }
+          if (RT.i >= RT.frames.length - 1) rShow(0);
+          $("#r-play").textContent = "❚❚ Pausar";
+          RT.timer = setTimeout(rTick, reduce ? 800 : 2000);
+        });
+
+        /* ================= Questões teóricas (texto) ================= */
+        const Q = [
+          {
+            q: "Como se calcula o fator de balanceamento (fb) de um nó?",
+            o: [
+              "h(subárvore esquerda) − h(subárvore direita)",
+              "Número de filhos da esquerda menos o da direita",
+              "Profundidade do nó menos a altura da árvore",
+              "Número de nós da subárvore esquerda menos o da direita",
+            ],
+            a: 0,
+            w: "O fb compara alturas, não quantidades de nós: fb = h(esq) − h(dir).",
+          },
+          {
+            q: "Um nó tem fb = −2. O que isso indica?",
+            o: [
+              "A subárvore direita é dois níveis mais alta: desbalanceamento à direita",
+              "A subárvore esquerda é dois níveis mais alta",
+              "O nó tem dois filhos à direita",
+              "O nó está equilibrado",
+            ],
+            a: 0,
+            w: "fb negativo = direita mais alta (desbalanceamento à direita); positivo = esquerda mais alta.",
+          },
+          {
+            q: "Em uma árvore AVL, quais valores de fb são permitidos em todos os nós?",
+            o: [
+              "−1, 0 e +1",
+              "Somente 0",
+              "−2 a +2",
+              "Qualquer valor, desde que a raiz tenha fb 0",
+            ],
+            a: 0,
+            w: "A propriedade AVL exige |fb| ≤ 1 em todos os nós. Com ±2 é preciso rotacionar.",
+          },
+          {
+            q: "fb(A) = +2 e fb(B) = +1, sendo B o filho esquerdo de A. Qual rotação resolve?",
+            o: [
+              "Rotação simples à direita",
+              "Rotação simples à esquerda",
+              "Rotação dupla à direita",
+              "Rotação dupla à esquerda",
+            ],
+            a: 0,
+            w: "Mesmo sinal (ambos pendem para a esquerda): uma rotação simples à direita em A.",
+          },
+          {
+            q: "fb(A) = −2 e fb(B) = +1. Qual é a correção?",
+            o: [
+              "Rotação dupla à esquerda: primeiro à direita em B, depois à esquerda em A",
+              "Rotação simples à esquerda em A",
+              "Rotação dupla à direita: primeiro à esquerda em B, depois à direita em A",
+              "Nenhuma: os sinais se anulam",
+            ],
+            a: 0,
+            w: 'Sinais opostos indicam o caso "torto": a primeira rotação (em B) alinha os nós e a segunda (em A) resolve.',
+          },
+          {
+            q: "Na rotação simples à esquerda em A (com filho direito B), o que acontece com o filho esquerdo de B?",
+            o: [
+              "Vira filho direito de A",
+              "Vira filho esquerdo de A",
+              "Continua filho esquerdo de B",
+              "É removido da árvore",
+            ],
+            a: 0,
+            w: "Ele é maior que A e menor que B, então cabe exatamente à direita de A (slide 15: o 11 passa para a direita do 10).",
+          },
+          {
+            q: "Depois de uma rotação, o percurso em ordem da árvore…",
+            o: [
+              "continua o mesmo: a árvore segue sendo de busca",
+              "fica invertido",
+              "muda só na subárvore rotacionada",
+              "deixa de ser crescente",
+            ],
+            a: 0,
+            w: "Rotações só trocam pais e filhos respeitando a ordem; o percurso em ordem é preservado.",
+          },
+          {
+            q: "Em uma inserção em AVL, quantas correções podem ser necessárias, no máximo?",
+            o: [
+              "Uma: uma rotação simples ou uma dupla no primeiro ancestral desbalanceado",
+              "Uma rotação em cada ancestral, até a raiz",
+              "Nenhuma, a inserção nunca desbalanceia",
+              "Sempre duas rotações",
+            ],
+            a: 0,
+            w: "Na inserção, corrigir o primeiro nó desbalanceado devolve à subárvore a altura que ela tinha antes, e os ancestrais acima voltam ao normal.",
+          },
+          {
+            q: "E na remoção?",
+            o: [
+              "Podem ser necessárias correções em vários ancestrais, até a raiz",
+              "Nunca é preciso rotacionar",
+              "No máximo uma rotação simples",
+              "Basta recalcular o fb da raiz",
+            ],
+            a: 0,
+            w: "Uma rotação após remoção pode diminuir a altura da subárvore e desbalancear um ancestral mais acima. Por isso o fb é conferido até a raiz.",
+          },
+          {
+            q: "Quando aparece o caso fb(A) = ±2 com fb(B) = 0?",
+            o: [
+              "Em remoções; ele é resolvido com rotação simples",
+              "Só em inserções; exige rotação dupla",
+              "Nunca acontece",
+              "Quando a árvore está vazia",
+            ],
+            a: 0,
+            w: "Em uma inserção o B nunca fica com fb 0 quando A chega a ±2. Na remoção isso acontece (slides 15 e 16), e a rotação simples resolve.",
+          },
+          {
+            q: "Ao remover um nó com dois filhos, como nos slides, ele é substituído por…",
+            o: [
+              "seu sucessor: o menor valor da subárvore direita",
+              "seu filho esquerdo",
+              "a raiz da árvore",
+              "qualquer folha",
+            ],
+            a: 0,
+            w: "O sucessor em ordem (ou, alternativamente, o antecessor) mantém a ordem da árvore de busca.",
+          },
+          {
+            q: "Por que vale a pena manter a árvore balanceada?",
+            o: [
+              "A busca custa O(altura): balanceada, O(log n); degenerada, O(n)",
+              "Ocupa menos memória",
+              "Permite valores repetidos",
+              "Deixa a inserção sem custo",
+            ],
+            a: 0,
+            w: "Inserindo 1, 2, 3, …, n numa ABB comum, a altura é n. Numa AVL a altura fica abaixo de cerca de 1,44·log₂ n.",
+          },
+        ];
+
+        /* ===== MOTOR AVL: idêntico na página e no Apps Script (gera as sequências e corrige as respostas) ===== */
+        function avlRng_(seed) {
+          var a = seed >>> 0;
+          return function () {
+            a |= 0;
+            a = (a + 0x6d2b79f5) | 0;
+            var t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+        }
+        function avlH_(n) {
+          return n ? 1 + Math.max(avlH_(n.l), avlH_(n.r)) : 0;
+        }
+        function avlFb_(n) {
+          return avlH_(n.l) - avlH_(n.r);
+        }
+        function avlRot_(n, dir) {
+          var b;
+          if (dir === "L") {
+            b = n.r;
+            n.r = b.l;
+            b.l = n;
+          } else {
+            b = n.l;
+            n.l = b.r;
+            b.r = n;
+          }
+          return b;
+        }
+        function avlFix_(a) {
+          if (avlFb_(a) < 0) {
+            if (avlFb_(a.r) > 0) {
+              a.r = avlRot_(a.r, "R");
+              return { n: avlRot_(a, "L"), t: "RDE" };
+            }
+            return { n: avlRot_(a, "L"), t: "RSE" };
+          }
+          if (avlFb_(a.l) < 0) {
+            a.l = avlRot_(a.l, "L");
+            return { n: avlRot_(a, "R"), t: "RDD" };
+          }
+          return { n: avlRot_(a, "R"), t: "RSD" };
+        }
+        /** Insere v e devolve a resposta certa: vaga ('raiz' ou 'pai:E' / 'pai:D'), nó A (ou null) e rotação ('none', 'RSE', 'RSD', 'RDE', 'RDD'). */
+        function avlPasso_(root, v) {
+          if (!root)
+            return {
+              root: { v: v, l: null, r: null },
+              vaga: "raiz",
+              a: null,
+              t: "none",
+            };
+          var path = [],
+            n = root;
+          while (n) {
+            path.push(n);
+            n = v < n.v ? n.l : n.r;
+          }
+          var p = path[path.length - 1],
+            novo = { v: v, l: null, r: null };
+          if (v < p.v) p.l = novo;
+          else p.r = novo;
+          var vaga = p.v + (v < p.v ? ":E" : ":D");
+          for (var i = path.length - 1; i >= 0; i--) {
+            var a = path[i];
+            if (Math.abs(avlFb_(a)) >= 2) {
+              var fx = avlFix_(a);
+              if (i === 0) root = fx.n;
+              else {
+                var q = path[i - 1];
+                if (q.l === a) q.l = fx.n;
+                else q.r = fx.n;
+              }
+              return { root: root, vaga: vaga, a: a.v, t: fx.t };
+            }
+          }
+          return { root: root, vaga: vaga, a: null, t: "none" };
+        }
+        function avlGabarito_(seq) {
+          var root = null,
+            out = [];
+          for (var i = 0; i < seq.length; i++) {
+            var r = avlPasso_(root, seq[i]);
+            root = r.root;
+            out.push({ v: seq[i], vaga: r.vaga, a: r.a, t: r.t });
+          }
+          return out;
+        }
+        /** Sequências dos slides da aula (exemplos, desafios e exercícios): nenhuma sequência da competição pode começar igual a elas. */
+        var AVL_SLIDES = [
+          [57, 45, 77, 13, 60, 84, 9, 25, 78],
+          [57, 45, 13, 9, 25, 60],
+          [1, 2, 3, 10, 4, 5, 9, 7, 8],
+          [35, 39, 51, 20, 13, 28, 22, 32, 25, 33],
+          [15, 27, 49, 10, 8, 67, 59, 9, 13, 20, 14],
+          [27, 36, 15, 16, 7, 42, 30],
+          [75, 17, 89, 60, 76, 39, 97, 21, 100],
+          [14, 5, 1, 31, 9, 12, 6, 19, 45, 11, 22],
+          [10, 12, 14],
+          [8, 6, 4],
+          [10, 12, 11],
+          [8, 4, 6],
+          [10, 12, 11, 14],
+          [8, 6, 4, 7],
+          [4, 2, 7, 1, 3],
+        ];
+        function avlDoSlide_(s) {
+          for (var i = 0; i < AVL_SLIDES.length; i++) {
+            var sl = AVL_SLIDES[i],
+              p = 0;
+            while (p < s.length && p < sl.length && s[p] === sl[p]) p++;
+            if (p >= 3) return true;
+          }
+          return false;
+        }
+        /** As duas sequências da competição, sorteadas a partir da semente da rodada (mesmas para toda a turma). */
+        function avlSequencias_(semente) {
+          var rnd = avlRng_(semente),
+            specs = [
+              { n: 8, rot: 2, max: 4 },
+              { n: 10, rot: 3, max: 5 },
+            ],
+            res = [];
+          for (var k = 0; k < specs.length; k++) {
+            var sp = specs[k],
+              achou = null;
+            for (var tent = 0; tent < 3000 && !achou; tent++) {
+              var s = [],
+                vis = {};
+              while (s.length < sp.n) {
+                var x = 10 + Math.floor(rnd() * 90);
+                if (!vis[x]) {
+                  vis[x] = 1;
+                  s.push(x);
+                }
+              }
+              var g = avlGabarito_(s),
+                rot = 0,
+                dup = 0,
+                simp = 0;
+              for (var j = 0; j < g.length; j++) {
+                if (g[j].t !== "none") rot++;
+                if (g[j].t === "RDE" || g[j].t === "RDD") dup++;
+                if (g[j].t === "RSE" || g[j].t === "RSD") simp++;
+              }
+              if (
+                rot >= sp.rot &&
+                rot <= sp.max &&
+                dup >= 1 &&
+                simp >= 1 &&
+                (k === 0 || s.join() !== res[0].join()) &&
+                !avlDoSlide_(s)
+              )
+                achou = s;
+            }
+            res.push(
+              achou ||
+                (k
+                  ? [44, 71, 58, 23, 90, 36, 65, 12, 49, 81]
+                  : [62, 47, 83, 29, 54, 18, 76, 91]),
+            );
+          }
+          return res;
+        }
+        var AVL_QUIZ_N = 12;
+        /** Corrige: cada valor a partir do 2º vale 1 ponto (vaga certa de primeira + decisão certa); cada questão teórica vale 1. */
+        function avlCorrige_(semente, resp) {
+          resp = resp || {};
+          var seqs = avlSequencias_(semente),
+            pontos = 0,
+            max = 0,
+            det = { p1: 0, p2: 0, quiz: 0 };
+          ["p1", "p2"].forEach(function (k, i) {
+            var g = avlGabarito_(seqs[i]),
+              r = resp[k] || [];
+            for (var j = 1; j < g.length; j++) {
+              max++;
+              var a = r[j];
+              if (
+                a &&
+                a.vaga === g[j].vaga &&
+                a.t === g[j].t &&
+                (g[j].t === "none" || Number(a.a) === g[j].a)
+              ) {
+                pontos++;
+                det[k]++;
+              }
+            }
+          });
+          var qz = resp.quiz || {};
+          for (var q = 0; q < AVL_QUIZ_N; q++) {
+            max++;
+            if (qz["q" + q] === 0) {
+              pontos++;
+              det.quiz++;
+            }
+          }
+          return { pontos: pontos, max: max, det: det };
+        }
+        /* ===== fim do motor ===== */
+
+        /* ================= CONFIGURAÇÃO DA TURMA ================= */
+        // 1) Cole aqui a URL do App da Web do Google Apps Script (termina em /exec):
+        const SCRIPT_URL =
+          "https://script.google.com/macros/s/AKfycbyXt5IvH-qktVyJFW_IR75nermu7Xm3JrcGP-bSdPcl6WLwPF4FZ1lQUobcM1IA-MwNSw/exec";
+        // 2) Identificação da turma, gravada junto com cada envio:
+        const TURMA = "GRAFOS";
+        /* ========================================================== */
+        const CONFIGURED =
+          /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(
+            SCRIPT_URL,
+          );
+        const SEMENTE_TESTE = 20261104;
+        const esc = (s) =>
+          String(s).replace(
+            /[&<>"]/g,
+            (c) =>
+              ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+          );
+        const uuid = () =>
+          window.crypto && crypto.randomUUID
+            ? crypto.randomUUID()
+            : "x" +
+              Date.now().toString(36) +
+              Math.random().toString(36).slice(2);
+        const mmss = (s) => {
+          s = Math.max(0, Math.round(s));
+          const h = Math.floor(s / 3600),
+            m = Math.floor((s % 3600) / 60),
+            x = s % 60;
+          return (
+            (h
+              ? h + ":" + String(m).padStart(2, "0")
+              : String(m).padStart(2, "0")) +
+            ":" +
+            String(x).padStart(2, "0")
+          );
+        };
+        const hora = (iso) => {
+          try {
+            return new Date(iso).toLocaleTimeString("pt-BR");
+          } catch (_) {
+            return "";
+          }
+        };
+
+        /* ---------- estado do aluno (fica neste navegador) ---------- */
+        const STORE_KEY = "avl-competicao-v1";
+        function loadState() {
+          try {
+            const s = JSON.parse(localStorage.getItem(STORE_KEY));
+            if (s && s.aluno) return s;
+          } catch (_) {}
+          return null;
+        }
+        const ST = loadState() || {
+          aluno: uuid(),
+          nome: "",
+          mat: "",
+          rodada: null,
+          semente: null,
+          p1: { idx: 0, phase: "place", ans: [] },
+          p2: { idx: 0, phase: "place", ans: [] },
+          quiz: {},
+          qseed: Math.floor(Math.random() * 2147483647),
+        };
+        function saveState() {
+          try {
+            localStorage.setItem(STORE_KEY, JSON.stringify(ST));
+          } catch (_) {}
+        }
+        const SRV = {
+          status: CONFIGURED ? "carregando" : "teste",
+          inicio: 0,
+          fim: 0,
+          offset: 0,
+          semente: CONFIGURED ? null : SEMENTE_TESTE,
+        };
+        const nowSrv = () => Date.now() + SRV.offset;
+        const respostas = () => ({
+          p1: ST.p1.ans,
+          p2: ST.p2.ans,
+          quiz: ST.quiz,
+        });
+        const nota = () =>
+          SRV.semente
+            ? avlCorrige_(SRV.semente, respostas())
+            : { pontos: 0, max: 28, det: { p1: 0, p2: 0, quiz: 0 } };
+
+        /* ---------- árvore com vagas clicáveis (+) ---------- */
+        TreeView.prototype.slots = function (list) {
+          if (!this.gS) {
+            this.gS = mkEl("g");
+            this.svg.insertBefore(this.gS, this.gN);
+          }
+          this.gS.textContent = "";
+          for (const s of list) {
+            const g = mkEl("g", { class: "slot" });
+            g.dataset.key = s.key;
+            if (s.px != null) {
+              const dx = s.x - s.px,
+                dy = s.y - s.py,
+                L = Math.hypot(dx, dy) || 1,
+                R = this.R;
+              g.appendChild(
+                mkEl("line", {
+                  x1: s.px + (dx / L) * R,
+                  y1: s.py + (dy / L) * R,
+                  x2: s.x - (dx / L) * 15,
+                  y2: s.y - (dy / L) * 15,
+                }),
+              );
+            }
+            g.appendChild(mkEl("circle", { cx: s.x, cy: s.y, r: 15 }));
+            const t = mkEl("text", { x: s.x, y: s.y });
+            t.textContent = "+";
+            g.appendChild(t);
+            this.gS.appendChild(g);
+          }
+        };
+        function laySlots(root, W0 = 760) {
+          const out = [],
+            slots = [];
+          let i = 0;
+          (function walk(n, d, parent) {
+            if (!n) return;
+            if (!n.l)
+              slots.push({ key: n.v + ":E", parent: n, d: d + 1, i: i++ });
+            else walk(n.l, d + 1, n);
+            out.push({ n, d, i: i++, parent });
+            if (!n.r)
+              slots.push({ key: n.v + ":D", parent: n, d: d + 1, i: i++ });
+            else walk(n.r, d + 1, n);
+          })(root, 0, null);
+          if (!root) slots.push({ key: "raiz", parent: null, d: 0, i: i++ });
+          const cnt = Math.max(1, i),
+            pad = 30,
+            W = Math.max(W0, (cnt - 1) * 38 + 2 * pad);
+          const dx = cnt > 1 ? Math.min(60, (W - 2 * pad) / (cnt - 1)) : 0,
+            x0 = (W - dx * (cnt - 1)) / 2,
+            top = 44,
+            dy = 62;
+          const pos = new Map(
+            out.map((x) => [x.n.id, { x: x0 + x.i * dx, y: top + x.d * dy }]),
+          );
+          const maxD = Math.max(
+            0,
+            ...out.map((x) => x.d),
+            ...slots.map((x) => x.d),
+          );
+          return {
+            nodes: out.map((x) => ({
+              id: x.n.id,
+              label: String(x.n.v),
+              parent: x.parent ? x.parent.id : null,
+              x: x0 + x.i * dx,
+              y: top + x.d * dy,
+            })),
+            slots: slots.map((s) => {
+              const pp = s.parent && pos.get(s.parent.id);
+              return {
+                key: s.key,
+                x: x0 + s.i * dx,
+                y: top + s.d * dy,
+                px: pp ? pp.x : null,
+                py: pp ? pp.y : null,
+              };
+            }),
+            W,
+            H: top + maxD * dy + 34,
+          };
+        }
+
+        /* ---------- exercícios de construção ---------- */
+        const DEC = [
+          ["none", "Não precisa balancear"],
+          ["RSD", "Simples à direita"],
+          ["RSE", "Simples à esquerda"],
+          ["RDD", "Dupla à direita"],
+          ["RDE", "Dupla à esquerda"],
+        ];
+        const LOCK_HTML =
+          '<div class="locked" data-lock><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg><div><b>Aguardando o início da competição</b><p>O exercício abre quando o professor iniciar o cronômetro. A página verifica sozinha, não precisa recarregar.</p></div></div>';
+        class BuildEx {
+          constructor(k) {
+            this.k = k;
+            const box = document.querySelector(`[data-ex="${k}"]`);
+            box.innerHTML =
+              LOCK_HTML +
+              `<div data-gated hidden><div class="two">
+      <div class="card"><div class="row spread"><div class="chips" data-r="chips"></div><span class="expts" data-r="pts"></span></div>
+        <div class="canvas"><svg viewBox="0 0 760 300" aria-label="Árvore em construção"></svg></div>
+        <div class="caption" data-r="cap" aria-live="polite"></div><div class="pstrip" data-r="strip">${STRIP}</div></div>
+      <div class="card"><span class="lbl">Realizar balanceamento?</span><div class="choices" data-r="opts">${DEC.map(([t, s]) => `<button type="button" data-t="${t}">${s}</button>`).join("")}</div>
+        <p class="hint-a">Para escolher uma rotação, clique antes, na árvore, no nó A: o primeiro nó desbalanceado (fb ±2) no caminho de volta do nó inserido até a raiz.</p>
+        <div class="fb" data-r="fb">Clique no + onde o primeiro valor entra.</div>
+        <div class="row"><button class="btn btn-primary" type="button" data-r="next" disabled>Próximo valor</button></div></div>
+    </div></div>`;
+            this.box = box;
+            this.r = (n) => box.querySelector(`[data-r="${n}"]`);
+            this.tv = new TreeView(box.querySelector(".canvas svg"), {
+              W: 760,
+              onNode: (id, v) => this.pickA(v),
+            });
+            box.querySelector(".canvas svg").addEventListener("click", (ev) => {
+              const g = ev.target.closest(".slot");
+              if (g) this.slot(g.dataset.key, g);
+            });
+            this.player = new FramePlayer(this.tv, {
+              W: 760,
+              H: 240,
+              inorder: true,
+              onFrame: (F) => {
+                if (F.cap) this.r("cap").innerHTML = F.cap;
+              },
+            });
+            this.player.attach(this.r("strip"));
+            this.r("opts").addEventListener("click", (ev) => {
+              const b = ev.target.closest("button");
+              if (b && !b.disabled) this.decide(b.dataset.t);
+            });
+            this.r("next").addEventListener("click", () => this.next());
+            this.ready = false;
+          }
+          get S() {
+            return ST[this.k];
+          }
+          load(seq) {
+            this.seq = seq;
+            this.gab = avlGabarito_(seq);
+            this.ready = true;
+            this.selA = null;
+            this.shown = false;
+            this.T = { root: null };
+            for (let i = 0; i < Math.min(this.S.idx, seq.length); i++)
+              insertRec(this.T, new Rec(this.T), seq[i], true);
+            this.newId = null;
+            if (this.S.idx < seq.length && this.S.phase === "decide") {
+              const r = insertRec(
+                this.T,
+                new Rec(this.T),
+                seq[this.S.idx],
+                false,
+              );
+              this.newId = r.node && r.node.id;
+            }
+            this.player.reset();
+            this.render();
+            this.r("fb").className = "fb";
+            this.r("fb").textContent =
+              this.S.idx >= seq.length
+                ? "Exercício concluído."
+                : this.S.phase === "decide"
+                  ? "Escolha se é preciso balancear."
+                  : `Clique no + onde o valor ${seq[this.S.idx]} entra.`;
+          }
+          phase() {
+            return this.S.idx >= this.seq.length && !this.shown
+              ? "done"
+              : this.shown
+                ? "shown"
+                : this.S.phase;
+          }
+          pts() {
+            let p = 0;
+            for (let j = 1; j < this.gab.length; j++) {
+              const a = this.S.ans[j],
+                g = this.gab[j];
+              if (
+                a &&
+                a.t &&
+                a.vaga === g.vaga &&
+                a.t === g.t &&
+                (g.t === "none" || Number(a.a) === g.a)
+              )
+                p++;
+            }
+            return p;
+          }
+          render() {
+            const ph = this.phase(),
+              n = this.seq.length,
+              i = this.S.idx;
+            this.r("chips").innerHTML = this.seq
+              .map(
+                (v, j) =>
+                  `<span class="vchip ${j < i ? "done" : ""} ${j === i && ph !== "done" ? "cur" : ""}">${v}</span>`,
+              )
+              .join("");
+            this.r("pts").textContent = `${this.pts()} de ${n - 1} pontos`;
+            if (ph === "place") {
+              const L = laySlots(this.T.root, 760);
+              this.tv.update(L.nodes, { W: L.W, H: Math.max(L.H, 220) });
+              this.tv.clear();
+              this.tv.slots(L.slots);
+              this.r("cap").innerHTML =
+                `Valor ${i + 1} de ${n}: onde entra <b>${this.seq[i]}</b>? Clique no + correto.`;
+            } else if (ph === "decide") {
+              this.tv.slots([]);
+              drawFrame(
+                this.tv,
+                {
+                  root: this.T.root,
+                  hideFb: true,
+                  cls: { [this.newId]: "new" },
+                },
+                {
+                  W: 760,
+                  H: 220,
+                  inorder: true,
+                  extraCls:
+                    this.selA != null
+                      ? { [find(this.T.root, this.selA).id]: "sel check" }
+                      : {},
+                },
+              );
+              this.r("cap").innerHTML =
+                `<b>${this.seq[i]}</b> inserido. Realizar balanceamento? ${this.selA != null ? `Nó A escolhido: <b>${this.selA}</b>.` : "Se sim, clique no nó A e escolha a rotação."}`;
+            } else if (ph === "done") {
+              this.tv.slots([]);
+              drawFrame(
+                this.tv,
+                { root: this.T.root },
+                { W: 760, H: 220, inorder: true },
+              );
+              this.r("cap").innerHTML =
+                `Exercício concluído: <b>${this.pts()} de ${n - 1} pontos</b>. A árvore final está acima.`;
+            }
+            $$("button", this.r("opts")).forEach((b) => {
+              b.disabled = ph !== "decide";
+            });
+            this.r("next").disabled = ph !== "shown";
+            this.r("next").textContent =
+              this.S.idx >= n ? "Concluir" : "Próximo valor";
+          }
+          slot(key, g) {
+            if (!this.ready || this.phase() !== "place") return;
+            const i = this.S.idx,
+              v = this.seq[i],
+              g0 = this.gab[i];
+            if (!this.S.ans[i]) this.S.ans[i] = { vaga: key };
+            if (key !== g0.vaga) {
+              g.classList.remove("bad");
+              void g.getBBox();
+              g.classList.add("bad");
+              saveState();
+              updPts();
+              this.r("fb").className = "fb bad";
+              this.r("fb").innerHTML =
+                `<b>Não é aí.</b> Compare ${v} com cada nó desde a raiz: menor vai para a esquerda, maior para a direita.${i ? " Este valor não vale mais ponto, mas continue." : ""}`;
+              return;
+            }
+            const r = insertRec(this.T, new Rec(this.T), v, false);
+            this.newId = r.node.id;
+            if (i === 0) {
+              this.S.idx = 1;
+              this.S.phase = "place";
+              saveState();
+              this.r("fb").className = "fb ok";
+              this.r("fb").innerHTML =
+                `<b>${v}</b> é a raiz. Agora o próximo valor.`;
+              this.render();
+              return;
+            }
+            this.S.phase = "decide";
+            this.selA = null;
+            saveState();
+            this.r("fb").className = "fb";
+            this.r("fb").innerHTML =
+              this.S.ans[i].vaga === key
+                ? `Posição certa. Agora: é preciso balancear?`
+                : `Posição certa (na segunda tentativa). Agora: é preciso balancear?`;
+            this.render();
+          }
+          pickA(v) {
+            if (this.phase() !== "decide") return;
+            this.selA = this.selA === v ? null : v;
+            this.render();
+          }
+          decide(t) {
+            if (this.phase() !== "decide") return;
+            const i = this.S.idx,
+              g = this.gab[i];
+            if (t !== "none" && this.selA == null) {
+              this.r("fb").className = "fb bad";
+              this.r("fb").innerHTML =
+                "<b>Falta o nó A.</b> Clique na árvore no nó desbalanceado antes de escolher a rotação.";
+              return;
+            }
+            const a = this.S.ans[i];
+            a.t = t;
+            a.a = t === "none" ? null : this.selA;
+            const ok =
+              a.vaga === g.vaga && t === g.t && (t === "none" || a.a === g.a);
+            const decOk = t === g.t && (t === "none" || a.a === g.a);
+            this.S.idx = i + 1;
+            this.S.phase = "place";
+            this.shown = true;
+            saveState();
+            updPts();
+            const certo =
+              g.t === "none"
+                ? "não precisava balancear (todos os fb entre −1 e +1)"
+                : `A = ${g.a}, ${RNAME[g.t]}`;
+            this.r("fb").className = "fb " + (ok ? "ok" : "bad");
+            this.r("fb").innerHTML = ok
+              ? `<b>Correto! +1 ponto.</b> ${g.t === "none" ? "Não precisava balancear." : `A = ${g.a}, ${RNAME[g.t]}.`}`
+              : `<b>${decOk ? "Decisão certa, mas a posição não foi acertada de primeira: sem ponto." : "Não é essa."}</b> Resposta: ${certo}.`;
+            this.player.reset();
+            if (g.t !== "none") {
+              const R = new Rec(this.T);
+              R.snap({
+                cls: { [this.newId]: "new" },
+                ms: 1100,
+                cap: "Os fatores de balanceamento depois da inserção.",
+              });
+              fixNode(this.T, R, find(this.T.root, g.a));
+              this.player.push(R.frames);
+            } else
+              this.player.push([
+                {
+                  root: clone(this.T.root),
+                  cls: { [this.newId]: "new" },
+                  cap: "Fatores de balanceamento depois da inserção: todos entre −1 e +1.",
+                  ms: 900,
+                },
+              ]);
+            this.render();
+          }
+          next() {
+            if (this.phase() !== "shown") return;
+            this.player.finish();
+            this.player.reset();
+            this.shown = false;
+            this.newId = null;
+            this.r("fb").className = "fb";
+            this.r("fb").textContent =
+              this.S.idx >= this.seq.length
+                ? "Exercício concluído."
+                : `Clique no + onde o valor ${this.seq[this.S.idx]} entra.`;
+            this.render();
+          }
+        }
+        const EX = { p1: new BuildEx("p1"), p2: new BuildEx("p2") };
+
+        /* ---------- questões teóricas (só a primeira resposta conta) ---------- */
+        const qperm = (() => {
+          const r = avlRng_(ST.qseed);
+          return Q.map((q) => {
+            const idx = q.o.map((_, i) => i);
+            for (let i = idx.length - 1; i > 0; i--) {
+              const j = Math.floor(r() * (i + 1));
+              [idx[i], idx[j]] = [idx[j], idx[i]];
+            }
+            return idx;
+          });
+        })();
+        function renderQuiz() {
+          $("#quiz").innerHTML = Q.map(
+            (q, i) =>
+              `<div class="card q" data-q="${i}"><span class="qn">QUESTÃO ${i + 1} · 1 PONTO</span><h4>${q.q}</h4><div class="opts">${qperm[i].map((o, k) => `<button type="button" data-o="${o}">${String.fromCharCode(97 + k)}) ${q.o[o]}</button>`).join("")}</div><div class="why" hidden></div></div>`,
+          ).join("");
+          $$("#quiz .q").forEach((card) => markQ(card, +card.dataset.q));
+          qScore();
+        }
+        function markQ(card, i) {
+          const ans = ST.quiz["q" + i];
+          if (ans === undefined) return;
+          card.querySelectorAll(".opts button").forEach((x) => {
+            x.disabled = true;
+            const o = +x.dataset.o;
+            if (o === Q[i].a) x.classList.add("right");
+            else if (o === ans) x.classList.add("wrong");
+          });
+          const w = card.querySelector(".why");
+          w.hidden = false;
+          w.className = "why" + (ans === Q[i].a ? "" : " miss");
+          w.innerHTML = `<b>${ans === Q[i].a ? "Correto. +1 ponto." : "Não é essa."}</b> ${Q[i].w}`;
+        }
+        function qScore() {
+          const done = Q.filter(
+              (_, i) => ST.quiz["q" + i] !== undefined,
+            ).length,
+            right = Q.filter((q, i) => ST.quiz["q" + i] === q.a).length;
+          $("#q-score").textContent = done
+            ? `${right} de ${done} corretas · ${Q.length - done} restantes`
+            : `0 de ${Q.length} respondidas`;
+          $("#q-bar").style.width = (right / Q.length) * 100 + "%";
+        }
+        $("#quiz").addEventListener("click", (ev) => {
+          const b = ev.target.closest(".opts button");
+          if (!b || b.disabled) return;
+          const card = b.closest(".q"),
+            i = +card.dataset.q;
+          if (ST.quiz["q" + i] !== undefined) return;
+          ST.quiz["q" + i] = +b.dataset.o;
+          saveState();
+          markQ(card, i);
+          qScore();
+          updPts();
+        });
+
+        /* ---------- liberação, cronômetro e sincronização ---------- */
+        function setOpen(open) {
+          $$("[data-lock]").forEach((x) => {
+            x.hidden = open;
+          });
+          $$("[data-gated]").forEach((x) => {
+            x.hidden = !open;
+          });
+          if (open && SRV.semente) {
+            if (ST.semente !== SRV.semente) {
+              ST.semente = SRV.semente;
+              ST.p1 = { idx: 0, phase: "place", ans: [] };
+              ST.p2 = { idx: 0, phase: "place", ans: [] };
+              saveState();
+            }
+            const seqs = avlSequencias_(SRV.semente);
+            if (!EX.p1.ready || EX.p1.seq.join() !== seqs[0].join()) {
+              EX.p1.load(seqs[0]);
+              EX.p2.load(seqs[1]);
+            }
+          }
+          updPts();
+        }
+        function clockTick() {
+          const c = $("#clock");
+          if (SRV.status === "teste") {
+            c.className = "clock";
+            c.textContent = "modo de teste (sem servidor)";
+          } else if (SRV.status === "carregando") {
+            c.className = "clock";
+            c.textContent = "conectando…";
+          } else if (SRV.status === "aguardando") {
+            c.className = "clock";
+            c.textContent = "aguardando o início";
+          } else {
+            const rest = (SRV.fim - nowSrv()) / 1000;
+            if (rest > 0) {
+              c.className = "clock " + (rest < 120 ? "warn" : "on");
+              c.textContent = `⏱ ${mmss(rest)} restantes`;
+            } else {
+              c.className = "clock end";
+              c.textContent = "tempo encerrado";
+              if (SRV.status === "andamento") {
+                SRV.status = "encerrada";
+                syncServer();
+              }
+            }
+          }
+          pfClock();
+        }
+        setInterval(clockTick, 1000);
+        let syncT = null;
+        function applyRodada(rod) {
+          rod = Number(rod);
+          if (!rod) return false;
+          if (ST.rodada == null) {
+            ST.rodada = rod;
+            saveState();
+            return false;
+          }
+          if (ST.rodada === rod) return false;
+          Object.assign(ST, {
+            rodada: rod,
+            semente: null,
+            p1: { idx: 0, phase: "place", ans: [] },
+            p2: { idx: 0, phase: "place", ans: [] },
+            quiz: {},
+          });
+          saveState();
+          try {
+            sessionStorage.setItem("avl-nova", String(rod));
+          } catch (_) {}
+          location.reload();
+          return true;
+        }
+        async function syncServer() {
+          clearTimeout(syncT);
+          if (!CONFIGURED) return;
+          try {
+            const t0 = Date.now();
+            const r = await fetch(`${SCRIPT_URL}?acao=ping`);
+            const j = await r.json();
+            if (j && j.ok) {
+              if (applyRodada(j.rodada)) return;
+              SRV.offset = j.agora - Math.round((t0 + Date.now()) / 2);
+              Object.assign(SRV, {
+                status: j.status,
+                inicio: j.inicio,
+                fim: j.fim,
+                semente: j.semente || null,
+              });
+              setOpen(j.status !== "aguardando");
+              clockTick();
+            }
+          } catch (_) {
+            if (SRV.status === "carregando")
+              $("#clock").textContent = "sem conexão; tentando de novo";
+          }
+          syncT = setTimeout(
+            syncServer,
+            (SRV.status === "aguardando" || SRV.status === "carregando"
+              ? 8000
+              : SRV.status === "andamento"
+                ? 25000
+                : 60000) +
+              Math.random() * 3000,
+          );
+        }
+
+        /* ---------- pontos e envio ---------- */
+        function updPts() {
+          const n = nota();
+          $("#pts").textContent = `${n.pontos} / ${n.max} pontos`;
+          if (EX.p1.ready)
+            EX.p1.r("pts").textContent =
+              `${EX.p1.pts()} de ${EX.p1.seq.length - 1} pontos`;
+          if (EX.p2.ready)
+            EX.p2.r("pts").textContent =
+              `${EX.p2.pts()} de ${EX.p2.seq.length - 1} pontos`;
+        }
+        const who = $("#who"),
+          mat = $("#mat"),
+          sendp = $("#sendp");
+        who.value = ST.nome || "";
+        mat.value = ST.mat || "";
+        who.addEventListener("input", () => {
+          ST.nome = who.value;
+          who.classList.remove("need");
+          saveState();
+        });
+        mat.addEventListener("input", () => {
+          ST.mat = mat.value;
+          saveState();
+        });
+        function panel(html, kind = "") {
+          sendp.hidden = false;
+          sendp.className = "wrap send-panel" + (kind ? " " + kind : "");
+          sendp.innerHTML = html;
+        }
+        const closeBtn =
+          '<button class="btn" type="button" data-act="close">Fechar</button>';
+        $("#send").addEventListener("click", () => {
+          const nome = who.value.trim(),
+            n = nota();
+          if (!CONFIGURED) {
+            panel(
+              `<span><b>Modo de teste: o envio não está configurado.</b> Sua pontuação fica salva neste navegador.</span>${closeBtn}`,
+              "bad",
+            );
+            return;
+          }
+          if (SRV.status === "aguardando" || SRV.status === "carregando") {
+            panel(
+              `<span><b>A competição ainda não começou.</b> Aguarde o professor iniciar o cronômetro.</span>${closeBtn}`,
+              "bad",
+            );
+            return;
+          }
+          if (nome.length < 3) {
+            who.classList.add("need");
+            who.focus();
+            panel(
+              `<span><b>Falta o seu nome.</b> Digite seu nome completo no campo acima antes de enviar.</span>${closeBtn}`,
+              "bad",
+            );
+            return;
+          }
+          const late = SRV.status === "encerrada" || nowSrv() > SRV.fim;
+          panel(
+            `<span>Enviar <b>${n.pontos} de ${n.max} pontos</b> em nome de <b>${esc(nome)}</b>${mat.value.trim() ? ` (matrícula ${esc(mat.value.trim())})` : ""}? ${late ? "<b>O tempo acabou:</b> o envio será gravado, mas não muda sua posição no ranking." : "Você pode enviar de novo depois, mas vale sempre o <b>último</b> envio: a pontuação e o horário dele."}</span><div class="row"><button class="btn btn-primary" type="button" data-act="ok">Confirmar envio</button>${closeBtn.replace("Fechar", "Cancelar")}</div>`,
+          );
+        });
+        sendp.addEventListener("click", (ev) => {
+          const b = ev.target.closest("[data-act]");
+          if (!b) return;
+          if (b.dataset.act === "close") {
+            sendp.hidden = true;
+            return;
+          }
+          if (b.dataset.act === "ok") doSend();
+        });
+        async function doSend() {
+          const n = nota();
+          const payload = {
+            sid: uuid(),
+            aluno: ST.aluno,
+            nome: who.value.trim(),
+            matricula: mat.value.trim(),
+            turma: TURMA,
+            rodada: ST.rodada,
+            pontos: n.pontos,
+            respostas: respostas(),
+          };
+          const body = JSON.stringify(payload);
+          panel("<span>Enviando…</span>");
+          let res = null;
+          try {
+            const r = await fetch(SCRIPT_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body,
+            });
+            res = await r.json();
+          } catch (_) {
+            try {
+              await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body,
+              });
+              panel(
+                `<span><b>Enviado.</b> O servidor não devolveu confirmação; se precisar, envie de novo.</span>${closeBtn}`,
+                "ok",
+              );
+            } catch (__) {
+              panel(
+                `<span><b>Não foi possível enviar.</b> Verifique a conexão e tente de novo. Sua pontuação continua salva.</span>${closeBtn}`,
+                "bad",
+              );
+            }
+            return;
+          }
+          if (res && !res.ok && res.erro === "rodada") {
+            applyRodada(res.rodada);
+            return;
+          }
+          if (res && !res.ok && res.erro === "aguardando") {
+            panel(
+              `<span><b>A competição ainda não começou.</b></span>${closeBtn}`,
+              "bad",
+            );
+            return;
+          }
+          if (res && res.ok && res.duplicado) {
+            panel(
+              `<span><b>Este envio já tinha sido recebido.</b></span>${closeBtn}`,
+              "ok",
+            );
+            return;
+          }
+          if (res && res.ok)
+            panel(
+              `<span><b>Recebido: ${res.pontos} de ${res.max} pontos, aos ${mmss(res.tempo)} de prova.</b> ${res.noPrazo ? "Este passa a ser o seu envio válido no ranking." : "Enviado depois do prazo: fica gravado, mas não altera o ranking."}</span>${closeBtn}`,
+              res.noPrazo ? "ok" : "bad",
+            );
+          else
+            panel(
+              `<span><b>O servidor recusou o envio:</b> ${esc((res && res.erro) || "erro desconhecido")}.</span>${closeBtn}`,
+              "bad",
+            );
+        }
+        try {
+          const nr = sessionStorage.getItem("avl-nova");
+          if (nr) {
+            sessionStorage.removeItem("avl-nova");
+            panel(
+              `<span><b>Nova competição.</b> O professor iniciou uma nova rodada: seu progresso foi zerado.</span>${closeBtn}`,
+              "ok",
+            );
+          }
+        } catch (_) {}
+
+        /* ================= Área do professor ================= */
+        const PF = {
+          key: "",
+          data: null,
+          timer: null,
+          seen: new Set(),
+          first: true,
+          telao: false,
+          prevRank: new Map(),
+        };
+        try {
+          PF.key = sessionStorage.getItem("avl-prof") || "";
+        } catch (_) {}
+        function pfMsg(t) {
+          $("#pf-status").textContent = t;
+        }
+        async function pfLoad() {
+          clearTimeout(PF.timer);
+          if (!CONFIGURED || !PF.key) return;
+          try {
+            const t0 = Date.now();
+            const r = await fetch(
+              `${SCRIPT_URL}?acao=ranking&chave=${encodeURIComponent(PF.key)}&turma=${encodeURIComponent(TURMA)}`,
+            );
+            const j = await r.json();
+            if (!j.ok) {
+              pfMsg(
+                j.erro === "chave"
+                  ? "Chave incorreta."
+                  : "Erro: " + (j.erro || "desconhecido"),
+              );
+              $("#pf-panel").hidden = true;
+              return;
+            }
+            try {
+              sessionStorage.setItem("avl-prof", PF.key);
+            } catch (_) {}
+            SRV.offset = j.agora - Math.round((t0 + Date.now()) / 2);
+            PF.data = j;
+            $("#pf-panel").hidden = false;
+            pfRender();
+            pfMsg(`atualizado às ${new Date().toLocaleTimeString("pt-BR")}`);
+          } catch (_) {
+            pfMsg(
+              "Não foi possível ler o servidor. Confira a URL do script e a conexão.",
+            );
+          }
+          if ($("#pf-auto").checked || PF.telao)
+            PF.timer = setTimeout(pfLoad, 5000);
+        }
+        function stateLabel(s) {
+          return s === "andamento"
+            ? ["em andamento", "on"]
+            : s === "encerrada"
+              ? ["encerrada", "end"]
+              : ["aguardando início", ""];
+        }
+        function pfClock() {
+          const j = PF.data;
+          if (!j) return;
+          const st =
+            j.status === "andamento" && nowSrv() > j.fim
+              ? "encerrada"
+              : j.status;
+          const [lab, cls] = stateLabel(st),
+            txt =
+              st === "andamento"
+                ? mmss((j.fim - nowSrv()) / 1000)
+                : st === "encerrada"
+                  ? "00:00"
+                  : "--:--";
+          for (const [s, c] of [
+            ["#pf-state", "#pf-clock"],
+            ["#tl-state", "#tl-clock"],
+          ]) {
+            $(s).textContent = lab;
+            $(s).className = "state-chip " + cls;
+            $(c).textContent = txt;
+          }
+          $("#pf-start-g").hidden = st !== "aguardando";
+          $("#pf-run-g").hidden = st === "aguardando";
+          $("#pf-stop").hidden = st !== "andamento";
+          $("#pf-plus").textContent =
+            st === "encerrada" ? "Reabrir +5 min" : "+5 min";
+        }
+        function pfRender() {
+          const j = PF.data;
+          pfClock();
+          const rk = j.ranking || [];
+          $("#pf-count").textContent =
+            `${rk.length} no ranking · ${j.total} envios`;
+          $("#pf-rank").innerHTML = rk.length
+            ? `<table class="rk-table"><thead><tr><th>#</th><th>Aluno</th><th>Pontos</th><th>Tempo</th><th>Envios</th><th>Último válido</th></tr></thead><tbody>${rk.map((a, i) => `<tr data-k="${esc(a.chave)}" class="${PF.prevRank.size && PF.prevRank.get(a.chave) !== a.enviado ? "flash" : ""}"><td><span class="medal ${i < 3 ? "g" + (i + 1) : ""}">${i + 1}</span></td><td>${esc(a.nome)}${a.matricula ? `<br><span class="hint">${esc(a.matricula)}</span>` : ""}</td><td class="n"><b>${a.pontos}</b>/${a.max}</td><td class="n">${mmss(a.tempo)}</td><td class="n">${a.envios}${a.atrasados ? ` <span class="tag-late">${a.atrasados} fora</span>` : ""}</td><td class="n">${hora(a.enviado)}</td></tr>`).join("")}</tbody></table>`
+            : '<p class="hint">Nenhum envio válido ainda.</p>';
+          const late = j.foraDoPrazo || [];
+          $("#pf-late").innerHTML = late.length
+            ? `<p class="hint" style="margin-top:10px"><b>Enviaram só depois do prazo (fora do ranking):</b> ${late.map((a) => `${esc(a.nome)} (${a.pontos}/${a.max})`).join(", ")}</p>`
+            : "";
+          const feed = j.recentes || [];
+          $("#pf-feed").innerHTML =
+            feed
+              .map(
+                (e) =>
+                  `<li class="${!PF.first && !PF.seen.has(e.sid) ? "new" : ""}"><span><span class="t">${hora(e.data)}</span> ${esc(e.nome)}</span><span class="row" style="gap:6px"><b>${e.pontos}/${e.max}</b><span class="t">${mmss(e.tempo)}</span><span class="${e.noPrazo ? "tag-ok" : "tag-late"}">${e.noPrazo ? "no prazo" : "fora do prazo"}</span></span></li>`,
+              )
+              .join("") || "<li>Nenhum envio ainda.</li>";
+          const fresh = feed.filter((e) => !PF.seen.has(e.sid));
+          feed.forEach((e) => PF.seen.add(e.sid));
+          if (PF.telao) tlRender(PF.first ? [] : fresh);
+          PF.prevRank = new Map(rk.map((a) => [a.chave, a.enviado]));
+          PF.first = false;
+        }
+        $("#pf-form").addEventListener("submit", (ev) => {
+          ev.preventDefault();
+          PF.key = $("#pf-key").value.trim();
+          if (!PF.key) {
+            pfMsg("Digite a chave.");
+            return;
+          }
+          if (!CONFIGURED) {
+            pfMsg("Página ainda não ligada à planilha (veja abaixo).");
+            return;
+          }
+          pfMsg("Conectando…");
+          PF.first = true;
+          PF.seen.clear();
+          PF.prevRank.clear();
+          pfLoad();
+        });
+        $("#pf-refresh").addEventListener("click", pfLoad);
+        $("#pf-auto").addEventListener("change", () => {
+          if ($("#pf-auto").checked) pfLoad();
+          else clearTimeout(PF.timer);
+        });
+        async function pfAction(acao, extra = {}) {
+          pfMsg("Enviando comando…");
+          try {
+            const r = await fetch(SCRIPT_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify({ acao, chave: PF.key, ...extra }),
+            });
+            const j = await r.json();
+            if (!j.ok) {
+              pfMsg(
+                j.erro === "chave"
+                  ? "Chave incorreta."
+                  : j.erro || "O servidor recusou o comando.",
+              );
+              return;
+            }
+            pfMsg(
+              {
+                iniciar:
+                  "Competição iniciada! Os alunos veem a liberação em até 10 segundos.",
+                tempo: "Tempo ajustado.",
+                encerrar:
+                  "Competição encerrada. Novos envios ficam fora do ranking.",
+                novaRodada:
+                  "Nova competição criada: ranking zerado. Inicie o cronômetro quando quiser.",
+              }[acao],
+            );
+            if (acao === "novaRodada") {
+              PF.seen.clear();
+              PF.prevRank.clear();
+              PF.first = true;
+            }
+            pfLoad();
+            syncServer();
+          } catch (_) {
+            pfMsg("Não foi possível enviar o comando. Confira a conexão.");
+          }
+        }
+        $("#pf-start").addEventListener("click", () => {
+          const m = parseInt($("#pf-min").value, 10);
+          if (!(m >= 1 && m <= 600)) {
+            pfMsg("Duração inválida (1 a 600 minutos).");
+            return;
+          }
+          pfAction("iniciar", { minutos: m });
+        });
+        $("#pf-plus").addEventListener("click", () =>
+          pfAction("tempo", { minutos: 5 }),
+        );
+        $("#pf-stop").addEventListener("click", () =>
+          pfConfirm(
+            "Encerrar a competição agora? Os envios seguintes serão gravados, mas não mudam o ranking.",
+            () => pfAction("encerrar"),
+          ),
+        );
+        $("#pf-new").addEventListener("click", () =>
+          pfConfirm(
+            "Começar uma nova competição? O ranking é zerado e cada aluno recomeça do zero ao abrir a página. Os envios atuais continuam guardados na planilha.",
+            () => pfAction("novaRodada"),
+          ),
+        );
+        function pfConfirm(text, fn) {
+          const c = $("#pf-confirm");
+          c.hidden = false;
+          c.innerHTML = `<span>${text}</span><div class="row"><button class="btn btn-primary" type="button" data-a="go">Confirmar</button><button class="btn" type="button" data-a="no">Cancelar</button></div>`;
+          c.onclick = (ev) => {
+            const b = ev.target.closest("[data-a]");
+            if (!b) return;
+            c.hidden = true;
+            if (b.dataset.a === "go") fn();
+          };
+        }
+
+        /* ---------- telão: ranking animado para projetar ---------- */
+        function tlRender(fresh) {
+          const list = $("#tl-list"),
+            rk = (PF.data && PF.data.ranking) || [];
+          const before = new Map(
+            [...list.children].map((li) => [
+              li.dataset.k,
+              li.getBoundingClientRect().top,
+            ]),
+          );
+          list.innerHTML =
+            rk
+              .slice(0, 20)
+              .map(
+                (a, i) =>
+                  `<li data-k="${esc(a.chave)}"><span class="medal ${i < 3 ? "g" + (i + 1) : ""}">${i + 1}</span><span class="nm">${esc(a.nome)}</span><span class="sc">${a.pontos}/${a.max}</span><span class="tm">${mmss(a.tempo)}</span></li>`,
+              )
+              .join("") ||
+            '<li><span></span><span class="nm" style="font-weight:400;color:var(--muted)">Aguardando os primeiros envios…</span><span></span><span></span></li>';
+          if (!reduce)
+            [...list.children].forEach((li) => {
+              const old = before.get(li.dataset.k),
+                now = li.getBoundingClientRect().top;
+              if (old != null && Math.abs(old - now) > 2) {
+                li.animate(
+                  [
+                    { transform: `translateY(${old - now}px)` },
+                    { transform: "translateY(0)" },
+                  ],
+                  { duration: 900, easing: "cubic-bezier(.2,.8,.2,1)" },
+                );
+                if (old > now) {
+                  li.classList.add("up");
+                  setTimeout(() => li.classList.remove("up"), 2200);
+                }
+              } else if (old == null && before.size)
+                li.animate(
+                  [
+                    { opacity: 0, transform: "scale(.96)" },
+                    { opacity: 1, transform: "none" },
+                  ],
+                  { duration: 600 },
+                );
+            });
+          if (fresh && fresh.length)
+            $("#tl-ticker").innerHTML = fresh
+              .map(
+                (e) =>
+                  `Novo envio: <b>${esc(e.nome)}</b> · ${e.pontos}/${e.max}${e.noPrazo ? "" : " (fora do prazo)"}`,
+              )
+              .join(" &nbsp;·&nbsp; ");
+        }
+        function tlOpen() {
+          PF.telao = true;
+          const t = $("#telao");
+          t.hidden = false;
+          try {
+            if (t.requestFullscreen) t.requestFullscreen().catch(() => {});
+          } catch (_) {}
+          tlRender([]);
+          pfClock();
+          pfLoad();
+        }
+        function tlClose() {
+          PF.telao = false;
+          $("#telao").hidden = true;
+          try {
+            if (document.fullscreenElement) document.exitFullscreen();
+          } catch (_) {}
+        }
+        $("#pf-telao").addEventListener("click", tlOpen);
+        $("#tl-close").addEventListener("click", tlClose);
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && PF.telao) tlClose();
+        });
+        document.addEventListener("fullscreenchange", () => {
+          if (!document.fullscreenElement && PF.telao && !$("#telao").hidden) {
+            /* continua aberto em tela normal */
+          }
+        });
+
+        /* ================= Início ================= */
+        dReset(true);
+        fLoad();
+        rLoad("rse");
+        renderQuiz();
+        updPts();
+        clockTick();
+        if (!CONFIGURED) {
+          $("#pf-setup").hidden = false;
+          setOpen(true);
+        } else {
+          setOpen(false);
+          syncServer();
+          if (PF.key) {
+            $("#pf-key").value = PF.key;
+            pfLoad();
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
