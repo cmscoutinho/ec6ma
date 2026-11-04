@@ -739,6 +739,15 @@
         font-family: var(--f-mono);
         font-size: 0.78rem;
       }
+      .log li[data-f] {
+        cursor: pointer;
+      }
+      .log li[data-f]:hover {
+        outline: 1px solid var(--line);
+      }
+      .log li.cur {
+        box-shadow: inset 3px 0 0 var(--edge);
+      }
       .log li.rot {
         background: color-mix(in srgb, var(--in) 10%, var(--sunk));
       }
@@ -1437,7 +1446,7 @@
         </p>
         <p class="ptinfo" style="margin-top: 14px">
           <b>Como funciona a competição.</b> Escreva seu nome na barra do topo.
-          As seções 1 a 3 são exemplos para revisar. Os dois exercícios de
+          As seções 1 a 4 são para revisar e praticar e não valem ponto. Os dois exercícios de
           construção (7 + 9 pontos) e as 12 questões teóricas (12 pontos) abrem
           quando o professor iniciar o cronômetro. Envie quando quiser; você
           pode reenviar, mas vale sempre o <b>último envio</b> (pontos e
@@ -1461,12 +1470,13 @@
     </header>
     <div class="wrap">
       <nav class="toc" aria-label="Seções">
-        <a href="#demo">1 · ABB × AVL</a>
-        <a href="#fator">2 · Fator de balanceamento</a>
+        <a href="#fator">1 · Fator de balanceamento</a>
+        <a href="#demo">2 · ABB × AVL</a>
         <a href="#rotacoes">3 · Rotações</a>
-        <a href="#p1">4 · Exercício 1</a>
-        <a href="#p2">5 · Exercício 2</a>
-        <a href="#teoricos">6 · Teóricas</a>
+        <a href="#sim">4 · Simulador</a>
+        <a href="#p1">5 · Exercício 1</a>
+        <a href="#p2">6 · Exercício 2</a>
+        <a href="#teoricos">7 · Teóricas</a>
         <a href="#prof">Professor</a>
         <span class="sp"></span>
         <button class="btn sm" id="all-close" type="button">
@@ -1479,11 +1489,81 @@
     </div>
 
     <main class="wrap">
-      <!-- ============ 1. DEMONSTRAÇÃO ============ -->
-      <section id="demo" data-sec>
+      <!-- ============ 1. FATOR DE BALANCEAMENTO ============ -->
+      <section id="fator" data-sec>
         <div class="sec-top">
           <div class="sec-head">
             <span class="num">SEÇÃO 1</span>
+            <h2>Fator de balanceamento: quem está pendendo?</h2>
+            <p>
+              A altura de uma subárvore é o número de nós no caminho mais longo
+              da sua raiz até uma folha (vazia = 0). Clique em um nó para ver as
+              duas subárvores e a conta do fb.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body">
+          <div class="two">
+            <div class="card">
+              <div class="row spread">
+                <select id="f-tree" aria-label="Árvore">
+                  <option value="ex1">
+                    Slides, exemplo 1: 57, 45, 77, 13, 60, 84, 9, 25, 78
+                  </option>
+                  <option value="ex2">
+                    Slides, exemplo 2: 57, 45, 13, 9, 25, 60
+                  </option>
+                  <option value="avl">AVL do exemplo de inserção</option>
+                  <option value="rnd">ABB aleatória</option>
+                </select>
+                <label class="chk"
+                  ><input type="checkbox" id="f-show" checked /> mostrar
+                  fb</label
+                >
+              </div>
+              <div class="canvas">
+                <svg
+                  id="f-svg"
+                  viewBox="0 0 760 300"
+                  aria-label="Árvore com fatores de balanceamento"
+                ></svg>
+              </div>
+              <div class="legend">
+                <span><b>+1</b> número acima do nó = fb</span
+                ><span><i class="bad"></i>|fb| ≥ 2: desbalanceado</span
+                ><span style="color: var(--vtx)">■ subárvore esquerda</span
+                ><span style="color: var(--edge)">■ subárvore direita</span>
+              </div>
+            </div>
+            <div class="card">
+              <span class="lbl">Conta do nó selecionado</span>
+              <div class="info" id="f-info">Clique em um nó da árvore.</div>
+              <div class="stats" id="f-verdict"></div>
+              <span class="lbl" style="margin-top: 4px">Treino rápido</span>
+              <p class="hint">
+                Um nó será destacado e os fb ficarão escondidos. Quanto vale o
+                fb dele?
+              </p>
+              <div class="row">
+                <button class="btn" id="f-train" type="button">
+                  Sortear um nó</button
+                ><span class="score" id="f-score"></span>
+              </div>
+              <div class="choices" id="f-opts" hidden></div>
+              <div class="fb" id="f-fb" hidden></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 2. DEMONSTRAÇÃO ============ -->
+      <section id="demo" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">SEÇÃO 2</span>
             <h2>Os mesmos valores, duas árvores</h2>
             <p>
               À esquerda, uma árvore binária de busca comum; à direita, uma AVL.
@@ -1565,76 +1645,6 @@
               <div class="stats" id="d-stats"></div>
             </div>
             <div class="caption" id="d-cap" aria-live="polite"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ 2. FATOR DE BALANCEAMENTO ============ -->
-      <section id="fator" data-sec>
-        <div class="sec-top">
-          <div class="sec-head">
-            <span class="num">SEÇÃO 2</span>
-            <h2>Fator de balanceamento: quem está pendendo?</h2>
-            <p>
-              A altura de uma subárvore é o número de nós no caminho mais longo
-              da sua raiz até uma folha (vazia = 0). Clique em um nó para ver as
-              duas subárvores e a conta do fb.
-            </p>
-          </div>
-          <button class="collapse" type="button" aria-expanded="true">
-            <span class="chev">▼</span><span class="ct">Esconder seção</span>
-          </button>
-        </div>
-        <div class="sec-body">
-          <div class="two">
-            <div class="card">
-              <div class="row spread">
-                <select id="f-tree" aria-label="Árvore">
-                  <option value="ex1">
-                    Slides, exemplo 1: 57, 45, 77, 13, 60, 84, 9, 25, 78
-                  </option>
-                  <option value="ex2">
-                    Slides, exemplo 2: 57, 45, 13, 9, 25, 60
-                  </option>
-                  <option value="avl">AVL do exemplo de inserção</option>
-                  <option value="rnd">ABB aleatória</option>
-                </select>
-                <label class="chk"
-                  ><input type="checkbox" id="f-show" checked /> mostrar
-                  fb</label
-                >
-              </div>
-              <div class="canvas">
-                <svg
-                  id="f-svg"
-                  viewBox="0 0 760 300"
-                  aria-label="Árvore com fatores de balanceamento"
-                ></svg>
-              </div>
-              <div class="legend">
-                <span><b>+1</b> número acima do nó = fb</span
-                ><span><i class="bad"></i>|fb| ≥ 2: desbalanceado</span
-                ><span style="color: var(--vtx)">■ subárvore esquerda</span
-                ><span style="color: var(--edge)">■ subárvore direita</span>
-              </div>
-            </div>
-            <div class="card">
-              <span class="lbl">Conta do nó selecionado</span>
-              <div class="info" id="f-info">Clique em um nó da árvore.</div>
-              <div class="stats" id="f-verdict"></div>
-              <span class="lbl" style="margin-top: 4px">Treino rápido</span>
-              <p class="hint">
-                Um nó será destacado e os fb ficarão escondidos. Quanto vale o
-                fb dele?
-              </p>
-              <div class="row">
-                <button class="btn" id="f-train" type="button">
-                  Sortear um nó</button
-                ><span class="score" id="f-score"></span>
-              </div>
-              <div class="choices" id="f-opts" hidden></div>
-              <div class="fb" id="f-fb" hidden></div>
-            </div>
           </div>
         </div>
       </section>
@@ -1759,7 +1769,64 @@
         </div>
       </section>
 
-      <!-- ============ 4 e 5. EXERCÍCIOS PRÁTICOS (VALEM PONTOS) ============ -->
+      <!-- ============ 4. SIMULADOR (NÃO VALE PONTO) ============ -->
+      <section id="sim" data-sec>
+        <div class="sec-top">
+          <div class="sec-head">
+            <span class="num">SEÇÃO 4 · NÃO VALE PONTO</span>
+            <h2>Simulador: monte a sua AVL</h2>
+            <p>
+              Digite uma sequência de valores e acompanhe a construção da árvore
+              AVL inserção por inserção: a descida pela árvore, o recálculo dos
+              fb e as rotações. Avance e volte os passos com os botões.
+            </p>
+          </div>
+          <button class="collapse" type="button" aria-expanded="true">
+            <span class="chev">▼</span><span class="ct">Esconder seção</span>
+          </button>
+        </div>
+        <div class="sec-body">
+          <div class="two">
+            <div class="card">
+              <div class="row">
+                <input type="text" id="s-seq" placeholder="Ex.: 50, 20, 70, 10, 30, 25" style="flex: 1; min-width: 200px" aria-label="Sequência de valores" />
+                <button class="btn btn-primary" id="s-go" type="button">Construir</button>
+                <button class="btn" id="s-rnd" type="button">Sequência aleatória</button>
+              </div>
+              <div class="chips" id="s-chips"></div>
+              <div class="canvas">
+                <svg id="s-svg" viewBox="0 0 760 300" aria-label="Construção da árvore AVL"></svg>
+              </div>
+              <div class="legend">
+                <span><b>−1</b> fb</span><span><i class="new"></i>nó inserido</span><span><i class="bad"></i>A, desbalanceado</span><span><i class="pivot"></i>B</span><span><i class="up"></i>C (dupla)</span><span><i class="move"></i>troca de pai</span>
+              </div>
+              <div class="caption" id="s-cap" aria-live="polite">Digite uma sequência (por exemplo, 50, 20, 70, 10, 30, 25) e clique em "Construir".</div>
+              <div class="pctrl">
+                <div class="pstrip" id="s-strip" data-strip></div>
+                <label class="row"><span class="lbl">Ritmo</span><select id="s-speed"><option value="1.6">calmo</option><option value="1" selected>normal</option><option value="0.55">rápido</option></select></label>
+              </div>
+            </div>
+            <div class="card">
+              <div class="stats" id="s-stats"></div>
+              <span class="lbl">Regra aplicada</span>
+              <table class="rules" id="s-rules">
+                <thead><tr><th>fb(A)</th><th>fb(B)</th><th>Rotação</th></tr></thead>
+                <tbody>
+                  <tr data-r="p2p1"><td>+2</td><td>+1</td><td>simples à direita</td></tr>
+                  <tr data-r="m2m1"><td>−2</td><td>−1</td><td>simples à esquerda</td></tr>
+                  <tr data-r="p2m1"><td>+2</td><td>−1</td><td>dupla à direita</td></tr>
+                  <tr data-r="m2p1"><td>−2</td><td>+1</td><td>dupla à esquerda</td></tr>
+                </tbody>
+              </table>
+              <span class="lbl">Inserções</span>
+              <ul class="log" id="s-log"><li>Nenhuma sequência ainda.</li></ul>
+              <p class="hint">Valores de 0 a 999, até 20 por vez; repetidos são ignorados. Clique numa inserção da lista para ir direto a ela.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 5 e 6. EXERCÍCIOS PRÁTICOS (VALEM PONTOS) ============ -->
       <section id="p1" data-sec>
         <div class="sec-top">
           <div class="sec-head">
@@ -1796,7 +1863,7 @@
         <div class="sec-body" data-ex="p2"></div>
       </section>
 
-      <!-- ============ 6. TEÓRICOS (VALEM PONTOS) ============ -->
+      <!-- ============ 7. TEÓRICOS (VALEM PONTOS) ============ -->
       <section id="teoricos" data-sec>
         <div class="sec-top">
           <div class="sec-head">
@@ -3390,6 +3457,68 @@
           RT.timer = setTimeout(rTick, reduce ? 800 : 2000);
         });
 
+        /* ================= 4. Simulador (não vale ponto) ================= */
+        FramePlayer.prototype.goto = function (n) {
+          this.paused = true;
+          clearTimeout(this.timer);
+          this.timer = null;
+          if (this.q[n]) {
+            this.i = n + 1;
+            this.show(this.q[n]);
+          }
+          this.state();
+        };
+        const SIM = { seq: [], rot: [] };
+        const sTv = new TreeView($("#s-svg"), { W: 760 });
+        const sPlayer = new FramePlayer(sTv, {
+          W: 760,
+          H: 260,
+          onFrame: (F) => {
+            $("#s-cap").innerHTML = F.cap || "";
+            $$("#s-rules tr[data-r]").forEach((tr) => tr.classList.toggle("on", tr.dataset.r === F.rule));
+            simChips(F.k);
+            $$("#s-log li[data-f]").forEach((li) => li.classList.toggle("cur", +li.dataset.i === F.k));
+          },
+        });
+        sPlayer.attach($("#s-strip"));
+        function simChips(k) {
+          $("#s-chips").innerHTML = SIM.seq
+            .map((v, i) => `<span class="vchip ${k != null && i < k ? "done" : ""} ${i === k ? "cur" : ""} ${SIM.rot[i] && SIM.rot[i].length ? "rot" : ""}">${v}</span>`)
+            .join("");
+        }
+        function simBuild(raw) {
+          const vals = [...new Set(raw)].slice(0, 20);
+          if (!vals.length) {
+            $("#s-cap").textContent = "Digite pelo menos um valor (números de 0 a 999).";
+            return;
+          }
+          $("#s-seq").value = vals.join(", ");
+          SIM.seq = vals;
+          SIM.rot = [];
+          const T = { root: null }, starts = [];
+          const frames = [{ root: null, k: -1, ms: 900, cap: `Sequência: ${vals.join(", ")}. A árvore começa vazia.` }];
+          vals.forEach((v, i) => {
+            const R = new Rec(T);
+            const r = insertRec(T, R, v, true);
+            SIM.rot[i] = r.rots;
+            starts[i] = frames.length;
+            R.frames.forEach((F) => frames.push({ ...F, k: i, cap: `<b>Inserção ${i + 1} de ${vals.length}: ${v}</b> · ${F.cap || ""}` }));
+          });
+          const nrot = SIM.rot.filter((x) => x.length).length, n = vals.length;
+          frames.push({ root: clone(T.root), k: n, ms: 1200, cap: `Pronto: ${n} valores, altura <b>${h(T.root)}</b> (a mínima possível é ${Math.ceil(Math.log2(n + 1))}), com ${nrot} ${nrot === 1 ? "inserção que exigiu" : "inserções que exigiram"} rotação.` });
+          $("#s-stats").innerHTML = `<span class="stat">nós<b>${n}</b></span><span class="stat">altura<b>${h(T.root)}</b></span><span class="stat">mínima<b>${Math.ceil(Math.log2(n + 1))}</b></span><span class="stat">com rotação<b>${nrot}</b></span>`;
+          $("#s-log").innerHTML = vals
+            .map((v, i) => `<li data-f="${starts[i]}" data-i="${i}" class="${SIM.rot[i].length ? "rot" : ""}"><b>+ ${v}</b> ${SIM.rot[i].length ? "→ " + SIM.rot[i].map((r) => `${RNAME[r.type]} (A = ${r.a}, B = ${r.b})`).join("; ") : "sem rotação"}</li>`)
+            .join("");
+          sPlayer.reset();
+          sPlayer.push(frames);
+        }
+        $("#s-go").addEventListener("click", () => simBuild(parseSeq($("#s-seq").value)));
+        $("#s-seq").addEventListener("keydown", (e) => { if (e.key === "Enter") simBuild(parseSeq($("#s-seq").value)); });
+        $("#s-rnd").addEventListener("click", () => simBuild(randomVals(9, 10, 99)));
+        $("#s-speed").addEventListener("change", (e) => { sPlayer.speed = +e.target.value; });
+        $("#s-log").addEventListener("click", (e) => { const li = e.target.closest("li[data-f]"); if (li) sPlayer.goto(+li.dataset.f); });
+
         /* ================= Questões teóricas (texto) ================= */
         const Q = [
           {
@@ -4785,6 +4914,7 @@
         dReset(true);
         fLoad();
         rLoad("rse");
+        drawFrame(sTv, { root: null }, { W: 760, H: 260 });
         renderQuiz();
         updPts();
         clockTick();
