@@ -29,7 +29,6 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body:not(.liberada) [data-comp]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
 h1,h2,h3,h4{margin:0;text-wrap:balance}
@@ -270,7 +269,7 @@ footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--mute
 </style>
 </head>
 <body style="margin:0">
-<div class="idbar" id="idbar" data-comp>
+<div class="idbar" id="idbar">
   <div class="wrap">
     <span class="lbl">Competição</span>
     <input id="who" type="text" placeholder="Seu nome completo" autocomplete="name" aria-label="Seu nome completo" maxlength="80">
@@ -286,7 +285,7 @@ footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--mute
     <div class="eyebrow">Teoria dos Grafos · Aula 09 · Algoritmos de menor caminho</div>
     <h1>Competição: <span class="v">Busca em grafos</span></h1>
     <p class="lead">A busca em largura (BFS) visita o grafo em camadas e encontra o caminho com menos arestas. A busca em profundidade (DFS) segue um caminho até o fim antes de voltar. Com pesos nas arestas, o algoritmo de Dijkstra encontra o caminho de menor custo.</p>
-    <p class="ptinfo" style="margin-top:14px" data-comp><b>Como funciona a competição.</b> Escreva seu nome na barra do topo. As seções 1 a 5 são exemplos e um simulador para revisar (não valem ponto). Os três exercícios (16 + 16 + 10 pontos) e as 8 questões teóricas (8 pontos) valem para o ranking. Nos exercícios você pode <b>desfazer</b> à vontade: conta só o que estiver montado no momento do envio. Vale sempre o <b>último envio</b> feito no prazo (respostas e horário), e a pontuação aparece quando o tempo acabar. Desempate: mais pontos e, depois, menor tempo.</p>
+    <p class="ptinfo" style="margin-top:14px"><b>Como funciona a competição.</b> Escreva seu nome na barra do topo. As seções 1 a 5 são exemplos e um simulador para revisar (não valem ponto). Os três exercícios (16 + 16 + 10 pontos) e as 8 questões teóricas (8 pontos) abrem quando o professor iniciar o cronômetro. Nos exercícios você pode <b>desfazer</b> à vontade: conta só o que estiver montado no momento do envio. Vale sempre o <b>último envio</b> feito no prazo (respostas e horário), e a pontuação aparece quando o tempo acabar. Desempate: mais pontos e, depois, menor tempo.</p>
   </div>
   <div class="hero-pair">
     <div><b class="kv">Sem custo (BFS, DFS)</b><span>BFS usa uma fila; DFS, uma pilha. Empates: vizinho de menor número primeiro.</span><span class="dim">O(V + A) com lista de adjacência</span></div>
@@ -300,10 +299,10 @@ footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--mute
     <a href="#dfs">3 · Profundidade</a>
     <a href="#dij">4 · Dijkstra</a>
     <a href="#sim">5 · Simulador</a>
-    <a href="#e1" data-comp>6 · Exercício 1</a>
-    <a href="#e2" data-comp>7 · Exercício 2</a>
-    <a href="#e3" data-comp>8 · Exercício 3</a>
-    <a href="#teoricos" data-comp>9 · Teóricas</a>
+    <a href="#e1">6 · Exercício 1</a>
+    <a href="#e2">7 · Exercício 2</a>
+    <a href="#e3">8 · Exercício 3</a>
+    <a href="#teoricos">9 · Teóricas</a>
     <a href="#prof">Professor</a>
     <span class="sp"></span>
     <button class="btn sm" id="all-close" type="button">Recolher todas</button>
@@ -367,21 +366,21 @@ footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--mute
 </section>
 
 <!-- ============ 6–8. EXERCÍCIOS (VALEM PONTOS) ============ -->
-<section id="e1" data-sec data-comp>
+<section id="e1" data-sec>
   <div class="sec-top">
     <div class="sec-head"><span class="num">COMPETIÇÃO · EXERCÍCIO 1 · 16 PONTOS</span><h2>Monte a árvore da BFS</h2><p>Começando no vértice indicado, clique nas arestas na ordem em que a busca em largura descobre os vértices. Empate: vizinho de menor número primeiro. Cada vértice vale 1 ponto pela posição certa na ordem e 1 pelo predecessor certo. Errou? Use “Desfazer”: não perde nada.</p></div>
     <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
   </div>
   <div class="sec-body" data-ex="e1"></div>
 </section>
-<section id="e2" data-sec data-comp>
+<section id="e2" data-sec>
   <div class="sec-top">
     <div class="sec-head"><span class="num">COMPETIÇÃO · EXERCÍCIO 2 · 16 PONTOS</span><h2>Monte a árvore da DFS</h2><p>Mesmas regras, agora com a busca em profundidade dos slides (pilha; desce para o vizinho não visitado de menor número). Outro grafo.</p></div>
     <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
   </div>
   <div class="sec-body" data-ex="e2"></div>
 </section>
-<section id="e3" data-sec data-comp>
+<section id="e3" data-sec>
   <div class="sec-top">
     <div class="sec-head"><span class="num">COMPETIÇÃO · EXERCÍCIO 3 · 10 PONTOS</span><h2>Dijkstra a partir de A</h2><p>Preencha, para cada vértice, a distância final (custo do menor caminho desde A) e o vértice anterior nesse caminho. 1 ponto por distância e 1 por anterior. Você pode mudar as respostas quantas vezes quiser.</p></div>
     <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
@@ -390,7 +389,7 @@ footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--mute
 </section>
 
 <!-- ============ 9. TEÓRICAS (VALEM PONTOS) ============ -->
-<section id="teoricos" data-sec data-comp>
+<section id="teoricos" data-sec>
   <div class="sec-top">
     <div class="sec-head"><span class="num">COMPETIÇÃO · QUESTÕES TEÓRICAS · 8 PONTOS</span><h2>Questões teóricas</h2><p>Cada questão vale 1 ponto. Só a primeira resposta conta: pense antes de clicar.</p></div>
     <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
@@ -1199,7 +1198,6 @@ $('#quiz').addEventListener('click', ev => {
 /* ---------- liberação, cronômetro e sincronização ---------- */
 let wasOver = null;
 function setOpen(open){
-  document.body.classList.toggle('liberada', open);
   $$('[data-lock]').forEach(x => { x.hidden = open; });
   $$('[data-gated]').forEach(x => { x.hidden = !open; });
   if (open && SRV.semente){
