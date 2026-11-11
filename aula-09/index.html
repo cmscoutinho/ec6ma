@@ -1,0 +1,1417 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Competição: Busca em Grafos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;600&display=swap">
+<style>
+/* Mesmo papel pontilhado e mesma tipografia das páginas de Teoria dos Grafos. Cores dos algoritmos como nos slides: BFS em vermelho (marcados) e verde (atual), DFS em azul (na pilha) e vermelho (finalizado). */
+:root{
+  --bg:#F2F2F7; --surface:#FCFCFE; --sunk:#E8E7F0; --ink:#1C1B2E; --muted:#5E5C75; --line:#D3D1DE; --dot:#C9C7D8;
+  --vtx:#2F54D4; --edge:#D2480F; --out:#15804A; --in:#C8233F;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Martian Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121220; --surface:#1A1A2B; --sunk:#0E0E19; --ink:#E7E6F2; --muted:#9C9AB4; --line:#2E2D45; --dot:#34334D;
+    --vtx:#7C98FF; --edge:#FF8A4C; --out:#4FD08C; --in:#FF6B85; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121220; --surface:#1A1A2B; --sunk:#0E0E19; --ink:#E7E6F2; --muted:#9C9AB4; --line:#2E2D45; --dot:#34334D;
+  --vtx:#7C98FF; --edge:#FF8A4C; --out:#4FD08C; --in:#FF6B85; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:clamp(16px,4vw,40px)}
+h1,h2,h3,h4{margin:0;text-wrap:balance}
+p{margin:0}
+.kv{color:var(--vtx);font-weight:600} .ke{color:var(--edge);font-weight:600} .ko{color:var(--out);font-weight:600} .ki{color:var(--in);font-weight:600}
+code{font-family:var(--f-mono);font-size:.84em}
+:focus-visible{outline:2px solid var(--vtx);outline-offset:2px}
+
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);padding-block:clamp(28px,5vw,56px) 20px;align-items:end}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(2rem,5vw,3.6rem);line-height:1.02;letter-spacing:-.03em}
+h1 .v{color:var(--vtx)}
+.lead{font-size:1.06rem;max-width:58ch;margin-top:18px}
+.hero-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hero-pair div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px}
+.hero-pair b{font-family:var(--f-display);font-size:.88rem;font-weight:500}
+.hero-pair span{font-size:.9rem;color:var(--muted);line-height:1.4}
+.hero-pair .dim{font-family:var(--f-mono);font-size:.74rem;color:var(--ink)}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px 26px;align-items:center}
+nav.toc a{font-family:var(--f-mono);font-size:.72rem;color:var(--ink);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.toc a:hover{border-color:var(--ink)}
+nav.toc .sp{flex:1}
+
+section{padding-block:clamp(30px,5vw,54px);border-top:1px solid var(--line)}
+.sec-top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.sec-head{display:grid;gap:8px;max-width:76ch}
+.sec-head .num{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+h2{font-family:var(--f-display);font-weight:500;font-size:clamp(1.35rem,2.8vw,2rem);line-height:1.15;letter-spacing:-.02em}
+.sec-head p{color:var(--muted)}
+.collapse{display:inline-flex;align-items:center;gap:8px;font-size:.84rem;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.collapse:hover{border-color:var(--ink)}
+.collapse .chev{display:inline-block;transition:transform .25s;font-size:.78rem}
+section.closed .collapse .chev{transform:rotate(-90deg)}
+section.closed{padding-block:18px}
+section.closed .sec-head p{display:none}
+.sec-body{margin-top:22px;display:grid;gap:18px}
+section.closed .sec-body{display:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h4{font:500 .98rem var(--f-display)}
+.lbl{font-family:var(--f-mono);font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hint{font-size:.86rem;color:var(--muted)}
+.hint-a{font-size:.86rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.spread{justify-content:space-between}
+.stack{display:grid;gap:12px;min-width:0;align-content:start}
+
+button{font:inherit;color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:.88rem;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.btn:hover{border-color:var(--ink)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn-primary:hover{background:var(--vtx);border-color:var(--vtx)}
+.btn.sm{font-size:.78rem;padding:5px 9px}
+.btn.danger:hover{border-color:var(--in);color:var(--in)}
+select,input[type=text],input[type=number],input[type=password]{font:inherit;font-size:.9rem;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+input[type=number]{width:92px;font-family:var(--f-mono)}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:.86rem}
+.ctl{display:inline-flex;gap:6px;align-items:center;font-size:.84rem;color:var(--muted)}
+
+/* passo a passo + velocidade */
+.pstrip{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pstrip .btn{min-width:40px;padding:7px 10px}
+.pstrip .pc-count{font:600 .72rem var(--f-mono);color:var(--muted);margin-left:4px}
+.pstrip .spd{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;color:var(--muted);margin-left:auto}
+.pstrip .spd select{font-size:.82rem;padding:5px 7px}
+
+/* grafo */
+.gcanvas{position:relative;border-radius:8px;border:1px solid var(--line);background-color:var(--surface);background-image:radial-gradient(var(--dot) 1px,transparent 1.2px);background-size:20px 20px;overflow:hidden}
+.gcanvas svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.gcanvas .tag{position:absolute;left:10px;top:8px;font:600 .66rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ge .ln{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;transition:stroke .3s,stroke-width .3s,opacity .3s}
+.ge .hit{fill:none;stroke:transparent;stroke-width:20}
+.ge.tr .ln{stroke:var(--in);stroke-width:4.6}
+.ge.tb .ln{stroke:var(--vtx);stroke-width:4.6}
+.ge.tt .ln{stroke:var(--in);stroke-width:2.6;stroke-dasharray:7 6}
+.ge.look .ln{stroke:var(--edge);stroke-width:3.4;stroke-dasharray:3 6}
+.ge.relax .ln{stroke:var(--edge);stroke-width:5.4}
+.ge.path .ln{stroke:var(--edge);stroke-width:7.5}
+.ge.pick,.ge.click{cursor:pointer}
+.ge.pick .ln{stroke:var(--vtx);stroke-width:2.6;stroke-dasharray:2 6}
+.ge.pick:hover .ln{stroke-width:5;stroke-dasharray:none}
+.ge.click:hover .ln{stroke-width:3}
+.ge.mine .ln{stroke:var(--vtx);stroke-width:5}
+.ge.ok .ln{stroke:var(--out);stroke-width:5}
+.ge.bad .ln{stroke:var(--in);stroke-width:5}
+.ge.gab .ln{stroke:var(--out);stroke-width:3.2;stroke-dasharray:9 6}
+.ge.flash .ln{animation:eflash .5s}
+@keyframes eflash{50%{stroke:var(--in);stroke-width:6}}
+.gw rect{fill:var(--surface);stroke:var(--line)}
+.gw text{font:600 12px var(--f-mono);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.gn circle.c{fill:var(--surface);stroke:var(--ink);stroke-width:2;transition:fill .3s,stroke .3s,stroke-width .3s}
+.gn circle.ring{fill:none;stroke:transparent;stroke-width:2}
+.gn text.lb{font:600 15px var(--f-body);fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.gn .gb{font:700 13px var(--f-mono);fill:var(--vtx);pointer-events:none}
+.gn .gb.up{fill:var(--edge)}
+.gn .gb.inf{fill:var(--muted);font-weight:600}
+.gn.start circle.ring{stroke:var(--muted);stroke-dasharray:3 4}
+.gn.tgt circle.ring{stroke:var(--edge);stroke-dasharray:6 4}
+.gn.mk circle.c{stroke:var(--in);stroke-width:3.6}
+.gn.cur circle.c{stroke:var(--out);stroke-width:4.4;fill:color-mix(in srgb,var(--out) 14%,var(--surface))}
+.gn.stk circle.c{stroke:var(--vtx);stroke-width:3.6}
+.gn.top circle.c{fill:color-mix(in srgb,var(--vtx) 18%,var(--surface))}
+.gn.fin circle.c{stroke:var(--in);stroke-width:3.6;fill:color-mix(in srgb,var(--in) 8%,var(--surface))}
+.gn.path circle.c{fill:color-mix(in srgb,var(--edge) 26%,var(--surface));stroke:var(--edge);stroke-width:4}
+.gn.mine circle.c{stroke:var(--vtx);stroke-width:3.6}
+.gn.new circle.c{fill:#F2D21B} .gn.new text.lb{fill:#1C1B2E}
+.gn.ok circle.c{stroke:var(--out);stroke-width:3.8}
+.gn.bad circle.c{stroke:var(--in);stroke-width:3.8}
+.gn.pop circle.c{animation:tpop .5s cubic-bezier(.3,1.6,.5,1);transform-box:fill-box;transform-origin:center}
+@keyframes tpop{from{transform:scale(.4)}to{transform:scale(1)}}
+
+/* estruturas e tabela (como nos slides) */
+.ds{display:grid;gap:8px}
+.dsl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dsn{font:600 .68rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);min-width:78px}
+.cells{display:flex;flex-wrap:wrap;padding-left:1.5px}
+.cells span{min-width:36px;height:34px;padding:0 6px;display:grid;place-items:center;border:1.5px solid var(--ink);margin-left:-1.5px;margin-bottom:2px;font:700 .86rem var(--f-mono);background:var(--surface)}
+.cells span.nw{color:var(--in)}
+.cells span.mn{background:color-mix(in srgb,var(--out) 16%,var(--surface));color:var(--out)}
+.cells span.out{text-decoration:line-through;color:var(--muted);background:var(--sunk);border-style:dashed}
+.cells span.em{border-style:dashed;color:var(--muted);font-weight:400;font-size:.76rem;min-width:84px}
+.tblwrap{overflow-x:auto}
+.vt{border-collapse:collapse;font-size:.82rem;width:100%}
+.vt th,.vt td{border:1px solid var(--line);padding:5px 6px;text-align:center;font-family:var(--f-mono);min-width:30px}
+.vt tbody th{font:600 .64rem var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;white-space:nowrap}
+.vt thead th{font-weight:700;background:var(--sunk)}
+.vt td.hi{background:color-mix(in srgb,var(--edge) 22%,transparent);font-weight:700}
+.vt td.okc{color:var(--out);font-weight:700} .vt td.badc{color:var(--in);font-weight:700}
+pre.pseudo{margin:0;font:400 .74rem/1.7 var(--f-mono);background:var(--sunk);border-radius:8px;padding:8px 0;overflow-x:auto;border:1px solid var(--line)}
+pre.pseudo .ln{display:block;padding:0 12px 0 0;white-space:pre;transition:background .25s}
+pre.pseudo .ln::before{content:attr(data-n);display:inline-block;width:3ch;margin-right:10px;text-align:right;color:var(--muted);opacity:.8}
+pre.pseudo .ln.on{background:color-mix(in srgb,var(--edge) 24%,transparent);box-shadow:inset 3px 0 var(--edge)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);display:inline-block;background:var(--surface)}
+.legend i.mk,.legend i.fin{border:3px solid var(--in)} .legend i.cur{border:3px solid var(--out)} .legend i.stk{border:3px solid var(--vtx)} .legend i.path{border:3px solid var(--edge);background:color-mix(in srgb,var(--edge) 26%,var(--surface))} .legend i.new{background:#F2D21B}
+.legend s{display:inline-block;width:22px;height:0;border-top:4px solid var(--in)} .legend s.b{border-color:var(--vtx)} .legend s.o{border-top:3px dashed var(--edge)} .legend s.t{border-top:3px dashed var(--in)}
+.caption{min-height:3.3em;font-size:.95rem;padding:10px 12px;border-left:3px solid var(--edge);background:color-mix(in srgb,var(--edge) 7%,transparent);border-radius:0 8px 8px 0}
+.duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.two{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
+
+/* exercícios */
+.fb{font-size:.92rem;padding:9px 12px;border-radius:8px;background:var(--sunk);min-height:2.6em}
+.fb.ok{background:color-mix(in srgb,var(--out) 13%,transparent)} .fb.ok b{color:var(--out)}
+.fb.bad{background:color-mix(in srgb,var(--in) 11%,transparent)} .fb.bad b{color:var(--in)}
+.expts{font:600 .8rem var(--f-mono)}
+.dtab input[type=number]{width:74px}
+.dtab select{font-family:var(--f-mono);font-size:.84rem}
+.dtab td,.dtab th{vertical-align:middle}
+.dtab td.okc input,.dtab td.okc select{border-color:var(--out)}
+.dtab td.badc input,.dtab td.badc select{border-color:var(--in)}
+.dtab .gabv{display:block;font-size:.72rem;margin-top:3px}
+.quiz-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.qscore{font:600 .92rem var(--f-mono)}
+.qbar{flex:1;min-width:160px;max-width:360px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.qbar i{display:block;height:100%;width:0;background:var(--out);transition:width .4s}
+.quiz{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px}
+.q h4{font:600 1rem/1.45 var(--f-body)}
+.q .qn{font-family:var(--f-mono);font-size:.68rem;color:var(--muted)}
+.opts{display:grid;gap:6px}
+.opts button{text-align:left;font-size:.92rem;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;line-height:1.4}
+.opts button:hover:not([disabled]){border-color:var(--ink)}
+.opts button[disabled]{cursor:default}
+.opts button.right{border-color:var(--out);background:color-mix(in srgb,var(--out) 13%,transparent)}
+.opts button.wrong{border-color:var(--in);background:color-mix(in srgb,var(--in) 11%,transparent)}
+.q .why{font-size:.9rem;border-left:3px solid var(--out);padding-left:10px}
+.q .why.miss{border-left-color:var(--in)}
+footer{border-top:1px solid var(--line);padding-block:26px 46px;color:var(--muted);font-size:.85rem}
+
+/* competição */
+.idbar{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.idbar .wrap{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding-block:10px}
+.idbar #who{flex:1 1 200px} .idbar #mat{flex:0 1 160px}
+.clock{font:600 .8rem var(--f-mono);padding:7px 10px;border-radius:8px;background:var(--sunk);white-space:nowrap}
+.clock.on{background:color-mix(in srgb,var(--out) 16%,transparent);color:var(--out)}
+.clock.warn{background:color-mix(in srgb,var(--edge) 18%,transparent);color:var(--edge)}
+.clock.end{background:color-mix(in srgb,var(--in) 14%,transparent);color:var(--in)}
+.ptsb{font:600 .8rem var(--f-mono);white-space:nowrap}
+.need{border-color:var(--in)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--in) 25%,transparent)}
+.send-panel{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:10px;border-radius:8px;background:var(--surface);border:1px solid var(--line);font-size:.92rem}
+.send-panel.ok{background:color-mix(in srgb,var(--out) 12%,var(--surface));border-color:var(--out)}
+.send-panel.bad{background:color-mix(in srgb,var(--in) 10%,var(--surface));border-color:var(--in)}
+.ptinfo{font-size:.92rem;padding:10px 14px;border-radius:8px;background:color-mix(in srgb,var(--vtx) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--vtx) 30%,var(--line))}
+.locked{display:flex;gap:14px;align-items:flex-start;padding:18px;border:1.5px dashed var(--line);border-radius:var(--r);background:var(--surface)}
+.locked svg{width:30px;height:30px;flex:none;color:var(--muted)}
+.locked p{color:var(--muted);font-size:.92rem;margin-top:4px}
+.rk-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rk-status{font-size:.86rem;color:var(--muted)}
+.state-chip{font:600 .74rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--sunk)}
+.state-chip.on{background:color-mix(in srgb,var(--out) 18%,transparent);color:var(--out)}
+.state-chip.end{background:color-mix(in srgb,var(--in) 15%,transparent);color:var(--in)}
+.bigclock{font:700 clamp(1.8rem,4vw,2.6rem) var(--f-mono);letter-spacing:-.02em}
+.rk-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
+.rk-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.rk-table th,.rk-table td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left}
+.rk-table th{font:600 .64rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rk-table td.n{font-family:var(--f-mono);font-size:.84rem;text-align:right;white-space:nowrap}
+.rk-table tr.flash td{animation:flash 2.4s}
+@keyframes flash{0%{background:color-mix(in srgb,var(--edge) 30%,transparent)}100%{background:transparent}}
+.medal{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font:700 .76rem var(--f-mono);background:var(--sunk);flex:none}
+.medal.g1{background:#F2C94C;color:#3A2C00} .medal.g2{background:#C9CED6;color:#222} .medal.g3{background:#D99A5B;color:#2A1600}
+.podio{display:grid;gap:8px}
+.podio .pd{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 12px;border-radius:9px;background:var(--sunk)}
+.podio .pd .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.podio .pd .n{font-family:var(--f-mono);font-size:.84rem;white-space:nowrap}
+.podio .pd.flash{animation:flash 2.4s}
+.nomes{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.nomes span{padding:4px 11px;border-radius:999px;background:var(--sunk);font-size:.86rem}
+.feed{list-style:none;margin:0;padding:0;display:grid;gap:5px;max-height:420px;overflow:auto}
+.feed li{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:6px 9px;border-radius:7px;background:var(--sunk);font-size:.86rem}
+.feed li.new{animation:flash 2.4s}
+.feed .t{font:600 .72rem var(--f-mono);color:var(--muted)}
+.tag-ok,.tag-late{font:600 .66rem var(--f-mono);padding:2px 7px;border-radius:999px;white-space:nowrap}
+.tag-ok{background:color-mix(in srgb,var(--out) 16%,transparent);color:var(--out)}
+.tag-late{background:color-mix(in srgb,var(--in) 14%,transparent);color:var(--in)}
+.setup ol{margin:0;padding-left:1.2em;display:grid;gap:4px;font-size:.92rem}
+.telao{position:fixed;inset:0;z-index:100;background:var(--bg);overflow:auto;padding:clamp(16px,3vw,40px)}
+.telao-top{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.telao h2{font-size:clamp(1.4rem,3vw,2.4rem)}
+.telao .bigclock{font-size:clamp(2.4rem,7vw,5rem)}
+.tl-list{list-style:none;margin:0;padding:0;display:grid;gap:8px;position:relative}
+.tl-list li{display:grid;grid-template-columns:56px minmax(0,1fr) auto auto;gap:16px;align-items:center;padding:12px 18px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:clamp(1rem,2vw,1.4rem);will-change:transform}
+.tl-list li .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-list li .sc{font:700 1.05em var(--f-mono)}
+.tl-list li .tm{font:600 .8em var(--f-mono);color:var(--muted)}
+.tl-list li.up{box-shadow:0 0 0 3px var(--out)}
+.tl-list .medal{width:40px;height:40px;font-size:1rem}
+.tl-nomes{margin-top:22px}
+.tl-nomes .nomes span{font-size:clamp(.95rem,1.6vw,1.2rem);padding:6px 14px;background:var(--surface);border:1px solid var(--line)}
+.tl-ticker{margin-top:16px;font-size:1rem;color:var(--muted);min-height:1.6em}
+
+@media (max-width:980px){ .two,.rk-grid{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:720px){ .hero,.duo{grid-template-columns:minmax(0,1fr)} .idbar{position:static} }
+@media (max-width:460px){ .hero-pair{grid-template-columns:1fr} .podio .pd{grid-template-columns:auto minmax(0,1fr) auto} .podio .pd .tmx{display:none} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body style="margin:0">
+<div class="idbar" id="idbar">
+  <div class="wrap">
+    <span class="lbl">Competição</span>
+    <input id="who" type="text" placeholder="Seu nome completo" autocomplete="name" aria-label="Seu nome completo" maxlength="80">
+    <input id="mat" type="text" placeholder="Matrícula (opcional)" aria-label="Matrícula" maxlength="30">
+    <span class="clock" id="clock">conectando…</span>
+    <span class="ptsb" id="pts">0 de 34 respostas</span>
+    <button class="btn btn-primary" id="send" type="button">Enviar resultado</button>
+  </div>
+  <div class="wrap send-panel" id="sendp" hidden aria-live="polite"></div>
+</div>
+<header class="wrap hero">
+  <div>
+    <div class="eyebrow">Teoria dos Grafos · Aula 09 · Algoritmos de menor caminho</div>
+    <h1>Competição: <span class="v">Busca em grafos</span></h1>
+    <p class="lead">A busca em largura (BFS) visita o grafo em camadas e encontra o caminho com menos arestas. A busca em profundidade (DFS) segue um caminho até o fim antes de voltar. Com pesos nas arestas, o algoritmo de Dijkstra encontra o caminho de menor custo.</p>
+    <p class="ptinfo" style="margin-top:14px"><b>Como funciona a competição.</b> Escreva seu nome na barra do topo. As seções 1 a 5 são exemplos e um simulador para revisar (não valem ponto). Os três exercícios (16 + 16 + 10 pontos) e as 8 questões teóricas (8 pontos) abrem quando o professor iniciar o cronômetro. Nos exercícios você pode <b>desfazer</b> à vontade: conta só o que estiver montado no momento do envio. Vale sempre o <b>último envio</b> feito no prazo (respostas e horário), e a pontuação aparece quando o tempo acabar. Desempate: mais pontos e, depois, menor tempo.</p>
+  </div>
+  <div class="hero-pair">
+    <div><b class="kv">Sem custo (BFS, DFS)</b><span>BFS usa uma fila; DFS, uma pilha. Empates: vizinho de menor número primeiro.</span><span class="dim">O(V + A) com lista de adjacência</span></div>
+    <div><b class="ke">Com custo (Dijkstra)</b><span>Fecha o aberto de menor distância e relaxa as arestas dele.</span><span class="dim">d(x) + w(x,y) &lt; d(y) ⇒ atualiza</span></div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="toc" aria-label="Seções">
+    <a href="#demo">1 · BFS × DFS</a>
+    <a href="#bfs">2 · Largura</a>
+    <a href="#dfs">3 · Profundidade</a>
+    <a href="#dij">4 · Dijkstra</a>
+    <a href="#sim">5 · Simulador</a>
+    <a href="#e1">6 · Exercício 1</a>
+    <a href="#e2">7 · Exercício 2</a>
+    <a href="#e3">8 · Exercício 3</a>
+    <a href="#teoricos">9 · Teóricas</a>
+    <a href="#prof">Professor</a>
+    <span class="sp"></span>
+    <button class="btn sm" id="all-close" type="button">Recolher todas</button>
+    <button class="btn sm" id="all-open" type="button">Mostrar todas</button>
+  </nav>
+</div>
+
+<main class="wrap">
+<!-- ============ 1. BFS × DFS ============ -->
+<section id="demo" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 1</span><h2>Mesmo grafo, duas ordens de visita</h2><p>O grafo dos slides, começando no vértice 7. Os números mostram a ordem em que cada vértice é descoberto: a BFS espalha em camadas; a DFS desce por uma trilha e só volta quando não há mais saída.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="card">
+      <div class="row"><label class="ctl">Início <select id="d-s" aria-label="Vértice inicial"></select></label></div>
+      <div class="duo">
+        <div class="stack"><div class="gcanvas"><span class="tag">BFS · busca em largura</span><svg id="d-b" aria-label="BFS"></svg></div><div class="caption" id="d-bc"></div></div>
+        <div class="stack"><div class="gcanvas"><span class="tag">DFS · busca em profundidade</span><svg id="d-d" aria-label="DFS"></svg></div><div class="caption" id="d-dc"></div></div>
+      </div>
+      <div class="pstrip" id="d-strip"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. BFS ============ -->
+<section id="bfs" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 2</span><h2>Busca em largura (BFS), passo a passo</h2><p>Como nos slides: fila, visitados, predecessores e o nível λ (número de arestas desde o início). No fim, o backtracking pelos predecessores mostra o caminho mais curto até o destino.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body"><div class="card" data-av="bfs"></div></div>
+</section>
+
+<!-- ============ 3. DFS ============ -->
+<section id="dfs" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 3</span><h2>Busca em profundidade (DFS), passo a passo</h2><p>O topo da pilha manda: se ele tem vizinho não visitado, a busca desce para o de menor número; se não tem, ele sai da pilha e a busca volta.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body"><div class="card" data-av="dfs"></div></div>
+</section>
+
+<!-- ============ 4. DIJKSTRA ============ -->
+<section id="dij" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 4</span><h2>Dijkstra: menor caminho com pesos</h2><p>Os números azuis são as distâncias estimadas. A cada passo o algoritmo fecha o vértice aberto de menor distância e tenta melhorar (relaxar) as distâncias dos vizinhos dele.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body"><div class="card" data-av="dij"></div></div>
+</section>
+
+<!-- ============ 5. SIMULADOR ============ -->
+<section id="sim" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">SEÇÃO 5 · NÃO VALE PONTO</span><h2>Simulador</h2><p>Escolha o algoritmo, o grafo, o início e o destino e acompanhe a execução. Os grafos dos exercícios aparecem aqui quando a competição terminar.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body"><div class="card" data-av="sim"></div></div>
+</section>
+
+<!-- ============ 6–8. EXERCÍCIOS (VALEM PONTOS) ============ -->
+<section id="e1" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">COMPETIÇÃO · EXERCÍCIO 1 · 16 PONTOS</span><h2>Monte a árvore da BFS</h2><p>Começando no vértice indicado, clique nas arestas na ordem em que a busca em largura descobre os vértices. Empate: vizinho de menor número primeiro. Cada vértice vale 1 ponto pela posição certa na ordem e 1 pelo predecessor certo. Errou? Use “Desfazer”: não perde nada.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body" data-ex="e1"></div>
+</section>
+<section id="e2" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">COMPETIÇÃO · EXERCÍCIO 2 · 16 PONTOS</span><h2>Monte a árvore da DFS</h2><p>Mesmas regras, agora com a busca em profundidade dos slides (pilha; desce para o vizinho não visitado de menor número). Outro grafo.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body" data-ex="e2"></div>
+</section>
+<section id="e3" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">COMPETIÇÃO · EXERCÍCIO 3 · 10 PONTOS</span><h2>Dijkstra a partir de A</h2><p>Preencha, para cada vértice, a distância final (custo do menor caminho desde A) e o vértice anterior nesse caminho. 1 ponto por distância e 1 por anterior. Você pode mudar as respostas quantas vezes quiser.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body" data-ex="e3"></div>
+</section>
+
+<!-- ============ 9. TEÓRICAS (VALEM PONTOS) ============ -->
+<section id="teoricos" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">COMPETIÇÃO · QUESTÕES TEÓRICAS · 8 PONTOS</span><h2>Questões teóricas</h2><p>Cada questão vale 1 ponto. Só a primeira resposta conta: pense antes de clicar.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="locked" data-lock><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg><div><b>Aguardando o início da competição</b><p>As questões abrem quando o professor iniciar o cronômetro. A página verifica sozinha, não precisa recarregar.</p></div></div>
+    <div data-gated hidden>
+      <div class="quiz-top"><span class="qscore" id="q-score"></span><div class="qbar"><i id="q-bar"></i></div></div>
+      <div class="quiz" id="quiz"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROFESSOR ============ -->
+<section id="prof" data-sec>
+  <div class="sec-top">
+    <div class="sec-head"><span class="num">ÁREA DO PROFESSOR</span><h2>Cronômetro, envios e ranking</h2><p>Digite a chave definida no script da planilha. Daqui você inicia e encerra a competição, acompanha os envios e projeta o ranking. Por padrão, só o pódio aparece com pontos e tempo; os demais aparecem apenas pelo nome.</p></div>
+    <button class="collapse" type="button" aria-expanded="true"><span class="chev">▼</span><span class="ct">Esconder seção</span></button>
+  </div>
+  <div class="sec-body">
+    <div class="card" id="pf-card">
+      <form class="rk-bar" id="pf-form">
+        <input type="password" id="pf-key" placeholder="Chave do professor" autocomplete="current-password" aria-label="Chave do professor">
+        <button class="btn btn-primary" type="submit">Entrar</button>
+        <span class="rk-status" id="pf-status" aria-live="polite"></span>
+      </form>
+      <div id="pf-panel" hidden>
+        <div class="rk-bar" style="justify-content:space-between;margin-top:6px">
+          <div class="row"><span class="state-chip" id="pf-state">—</span><span class="bigclock" id="pf-clock">--:--</span></div>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="pf-auto" checked> atualizar a cada 5 s</label>
+            <button class="btn" type="button" id="pf-refresh">Atualizar agora</button>
+            <button class="btn btn-primary" type="button" id="pf-telao">Abrir telão</button>
+          </div>
+        </div>
+        <div class="rk-bar" style="margin-top:12px">
+          <span id="pf-start-g" class="row"><label for="pf-min" class="hint">Duração</label><input type="number" id="pf-min" min="1" max="600" value="30" style="width:80px"><span class="hint">min</span><button class="btn btn-primary" type="button" id="pf-start">Iniciar competição</button></span>
+          <span id="pf-run-g" class="row"><button class="btn" type="button" id="pf-plus">+5 min</button><button class="btn danger" type="button" id="pf-stop">Encerrar agora</button></span>
+          <span style="flex:1"></span>
+          <button class="btn danger" type="button" id="pf-new">Nova competição</button>
+        </div>
+        <div class="send-panel" id="pf-confirm" hidden></div>
+        <div class="rk-grid" style="margin-top:14px">
+          <div class="card">
+            <div class="row spread"><h4>Ranking</h4><div class="row"><span class="hint" id="pf-count"></span><button class="btn sm" type="button" id="pf-full" aria-pressed="false">Mostrar classificação completa</button></div></div>
+            <div id="pf-rank"></div>
+            <div id="pf-late"></div>
+          </div>
+          <div class="card"><h4>Envios em tempo real</h4><ul class="feed" id="pf-feed"></ul></div>
+        </div>
+      </div>
+    </div>
+    <div class="card setup" id="pf-setup" hidden>
+      <h4>Configuração pendente</h4>
+      <p style="font-size:.94rem">Esta cópia da página ainda não está ligada a uma planilha: os exercícios abrem em modo de teste e os envios ficam desativados. Para ligar:</p>
+      <ol>
+        <li>Crie uma Planilha Google nova e abra <b>Extensões → Apps Script</b>.</li>
+        <li>Apague o conteúdo do editor, cole o arquivo <code>Codigo.gs</code> e troque <code>CHAVE_PROFESSOR</code> por uma senha sua. Salve.</li>
+        <li><b>Implantar → Nova implantação</b>, tipo <b>App da Web</b>, executar como <b>Eu</b>, acesso <b>Qualquer pessoa</b>. Autorize e copie a URL que termina em <code>/exec</code>.</li>
+        <li>Abra este arquivo HTML num editor de texto e cole a URL em <code>SCRIPT_URL</code>, no começo do script. Ajuste <code>TURMA</code> se quiser.</li>
+        <li>Publique o arquivo (GitHub Pages, AVA ou outro site) e passe o link aos alunos.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+<div class="telao" id="telao" hidden>
+  <div class="telao-top">
+    <div><span class="lbl">Competição · Busca em grafos</span><h2>Ranking ao vivo</h2></div>
+    <div class="row"><span class="state-chip" id="tl-state">—</span><span class="bigclock" id="tl-clock">--:--</span></div>
+    <button class="btn" type="button" id="tl-close">Fechar telão (Esc)</button>
+  </div>
+  <ol class="tl-list" id="tl-list"></ol>
+  <div class="tl-nomes" id="tl-nomes"></div>
+  <div class="tl-ticker" id="tl-ticker"></div>
+</div>
+
+<footer class="wrap">Competição de Busca em Grafos · Teoria dos Grafos (Aula 09). Exemplos baseados nos slides da aula; os grafos dos exercícios são sorteados a cada rodada e a correção oficial é feita no servidor.</footer>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const NS = 'http://www.w3.org/2000/svg';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mk = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]);
+
+/* ===== MOTOR BUSCA: idêntico na página e no Apps Script (gera os grafos da rodada e corrige as respostas) ===== */
+function bRng_(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function bMistura_(a, rnd) {
+  for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x; }
+  return a;
+}
+/** Ordem dos rótulos: numérica quando os dois são números, alfabética nos outros casos. */
+function bCmp_(a, b) {
+  var x = Number(a), y = Number(b);
+  if (!isNaN(x) && !isNaN(y)) return x - y;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function bChave_(u, v) { return bCmp_(u, v) <= 0 ? u + '|' + v : v + '|' + u; }
+/** Lista de adjacência com os vizinhos em ordem crescente (regra de desempate dos slides). */
+function bAdj_(G) {
+  var A = {}, i;
+  for (i = 0; i < G.V.length; i++) A[G.V[i]] = [];
+  for (i = 0; i < G.E.length; i++) {
+    var e = G.E[i], w = e[2] == null ? 1 : e[2];
+    A[e[0]].push({ v: e[1], w: w }); A[e[1]].push({ v: e[0], w: w });
+  }
+  for (var k in A) A[k].sort(function (p, q) { return bCmp_(p.v, q.v); });
+  return A;
+}
+function bBfs_(G, s) {
+  var A = bAdj_(G), vis = {}, pred = {}, niv = {}, ordem = [s], fila = [s];
+  vis[s] = 1; niv[s] = 0;
+  while (fila.length) {
+    var u = fila.shift();
+    for (var i = 0; i < A[u].length; i++) {
+      var v = A[u][i].v;
+      if (!vis[v]) { vis[v] = 1; pred[v] = u; niv[v] = niv[u] + 1; ordem.push(v); fila.push(v); }
+    }
+  }
+  return { ordem: ordem, pred: pred, niv: niv };
+}
+function bDfs_(G, s) {
+  var A = bAdj_(G), vis = {}, pred = {}, ordem = [s], pilha = [s], volta = 0;
+  vis[s] = 1;
+  while (pilha.length) {
+    var u = pilha[pilha.length - 1], nx = null;
+    for (var i = 0; i < A[u].length; i++) if (!vis[A[u][i].v]) { nx = A[u][i].v; break; }
+    if (nx !== null) { vis[nx] = 1; pred[nx] = u; ordem.push(nx); pilha.push(nx); }
+    else { pilha.pop(); if (ordem.length < G.V.length) volta++; }
+  }
+  return { ordem: ordem, pred: pred, volta: volta };
+}
+function bDijkstra_(G, s) {
+  var A = bAdj_(G), d = {}, p = {}, fech = {}, ordem = [], melh = 0, empate = false, i;
+  for (i = 0; i < G.V.length; i++) d[G.V[i]] = Infinity;
+  d[s] = 0;
+  while (true) {
+    var x = null;
+    for (i = 0; i < G.V.length; i++) {
+      var v = G.V[i];
+      if (fech[v] || d[v] === Infinity) continue;
+      if (x === null || d[v] < d[x]) x = v;
+      else if (d[v] === d[x]) empate = true;
+    }
+    if (x === null) break;
+    fech[x] = 1; ordem.push(x);
+    for (i = 0; i < A[x].length; i++) {
+      var y = A[x][i].v, c = d[x] + A[x][i].w;
+      if (fech[y]) continue;
+      if (c < d[y]) { if (d[y] !== Infinity) melh++; d[y] = c; p[y] = x; }
+      else if (c === d[y]) empate = true;
+    }
+  }
+  return { dist: d, pred: p, ordem: ordem, melh: melh, empate: empate };
+}
+/** Grafo planar sorteado numa grade cols × lin (arestas só entre células vizinhas). */
+function bGrade_(rnd, cols, lin, n, m, rot) {
+  for (var t = 0; t < 600; t++) {
+    var cel = [], c, r, i;
+    for (r = 0; r < lin; r++) for (c = 0; c < cols; c++) cel.push([c, r]);
+    cel = bMistura_(cel, rnd).slice(0, n);
+    var occ = {};
+    for (i = 0; i < n; i++) occ[cel[i][0] + ',' + cel[i][1]] = i;
+    var cand = [];
+    var add = function (a, b) { if (occ[a] != null && occ[b] != null) cand.push([occ[a], occ[b]]); };
+    for (r = 0; r < lin; r++) for (c = 0; c < cols; c++) {
+      add(c + ',' + r, (c + 1) + ',' + r);
+      add(c + ',' + r, c + ',' + (r + 1));
+      if (rnd() < 0.5) add(c + ',' + r, (c + 1) + ',' + (r + 1)); else add((c + 1) + ',' + r, c + ',' + (r + 1));
+      if (occ[(c + 1) + ',' + r] == null && c + 2 < cols) add(c + ',' + r, (c + 2) + ',' + r);
+    }
+    cand = bMistura_(cand, rnd);
+    var pai = [];
+    for (i = 0; i < n; i++) pai.push(i);
+    var raiz = function (x) { while (pai[x] !== x) x = pai[x] = pai[pai[x]]; return x; };
+    var usa = [], resto = [], comp = n;
+    for (i = 0; i < cand.length; i++) {
+      var a = raiz(cand[i][0]), b = raiz(cand[i][1]);
+      if (a !== b) { pai[a] = b; comp--; usa.push(cand[i]); } else resto.push(cand[i]);
+    }
+    if (comp > 1) continue;
+    for (i = 0; i < resto.length && usa.length < m; i++) usa.push(resto[i]);
+    if (usa.length < m) continue;
+    var lab = bMistura_(rot.slice(), rnd), P = {}, E = [];
+    for (i = 0; i < n; i++) P[lab[i]] = [Math.round((cel[i][0] + (rnd() - 0.5) * 0.24) * 100) / 100, Math.round((cel[i][1] + (rnd() - 0.5) * 0.24) * 100) / 100];
+    for (i = 0; i < usa.length; i++) E.push([lab[usa[i][0]], lab[usa[i][1]]]);
+    return { V: lab.slice().sort(bCmp_), E: E, P: P };
+  }
+  return null;
+}
+var BUSCA_N = 9, BUSCA_QUIZ_N = 8;
+/** Os três exercícios da rodada (mesmos para toda a turma). Nenhum grafo dos slides tem 9 vértices nem 6 vértices com 8 arestas. */
+function bExercicios_(semente) {
+  var rnd = bRng_(semente), num = [], i, t, G, s, out = {};
+  for (i = 1; i <= BUSCA_N; i++) num.push(String(i));
+  for (t = 0; t < 400 && !out.e1; t++) {
+    G = bGrade_(rnd, 4, 3, BUSCA_N, 13, num); if (!G) continue;
+    s = G.V[Math.floor(rnd() * BUSCA_N)];
+    var b = bBfs_(G, s), A = bAdj_(G), prof = 0, emp = 0;
+    for (i = 0; i < G.V.length; i++) {
+      var v = G.V[i]; prof = Math.max(prof, b.niv[v]);
+      if (v === s) continue;
+      var k = 0;
+      for (var j = 0; j < A[v].length; j++) if (b.niv[A[v][j].v] === b.niv[v] - 1) k++;
+      if (k >= 2) emp++;
+    }
+    if (prof >= 3 && emp >= 2) out.e1 = { G: G, s: s };
+  }
+  for (t = 0; t < 400 && !out.e2; t++) {
+    G = bGrade_(rnd, 4, 3, BUSCA_N, 13, num); if (!G) continue;
+    s = G.V[Math.floor(rnd() * BUSCA_N)];
+    var d = bDfs_(G, s), bb = bBfs_(G, s), dif = 0;
+    for (i = 0; i < G.V.length; i++) if (G.V[i] !== s && d.pred[G.V[i]] !== bb.pred[G.V[i]]) dif++;
+    if (d.volta >= 2 && dif >= 3) out.e2 = { G: G, s: s };
+  }
+  for (t = 0; t < 800 && !out.e3; t++) {
+    G = bGrade_(rnd, 3, 2, 6, 8, ['A', 'B', 'C', 'D', 'E', 'F']); if (!G) continue;
+    for (i = 0; i < G.E.length; i++) G.E[i].push(1 + Math.floor(rnd() * 9));
+    var r = bDijkstra_(G, 'A'), dists = {}, ok = !r.empate && r.melh >= 2, longo = 0;
+    for (i = 0; i < G.V.length && ok; i++) {
+      var x = G.V[i], dx = r.dist[x];
+      if (dx === Infinity || dists[dx]) ok = false;
+      dists[dx] = 1;
+      var passos = 0, y = x;
+      while (r.pred[y]) { y = r.pred[y]; passos++; }
+      longo = Math.max(longo, passos);
+    }
+    if (ok && longo >= 3) out.e3 = { G: G, s: 'A' };
+  }
+  if (!out.e1) out.e1 = { s: '4', G: { V: num.slice(), P: { 1: [0, 0], 2: [1, 0], 3: [2, 0], 4: [0, 1], 5: [1, 1], 6: [2, 1], 7: [3, 1], 8: [1, 2], 9: [3, 2] }, E: [['1', '2'], ['2', '3'], ['1', '4'], ['2', '5'], ['3', '6'], ['4', '5'], ['5', '6'], ['6', '7'], ['5', '8'], ['7', '9'], ['4', '8'], ['2', '6'], ['8', '9']] } };
+  if (!out.e2) out.e2 = { s: '6', G: { V: num.slice(), P: { 1: [0, 0], 2: [1, 0], 3: [3, 0], 4: [0, 1], 5: [1, 1], 6: [2, 1], 7: [3, 1], 8: [0, 2], 9: [2, 2] }, E: [['1', '2'], ['1', '4'], ['2', '5'], ['4', '5'], ['5', '6'], ['6', '7'], ['3', '7'], ['2', '6'], ['4', '8'], ['8', '5'], ['6', '9'], ['9', '7'], ['5', '9']] } };
+  if (!out.e3) out.e3 = { s: 'A', G: { V: ['A', 'B', 'C', 'D', 'E', 'F'], P: { A: [0, 0], B: [1, 0], C: [2, 0], D: [0, 1], E: [1, 1], F: [2, 1] }, E: [['A', 'B', 7], ['B', 'C', 2], ['A', 'D', 2], ['D', 'E', 3], ['B', 'E', 1], ['E', 'F', 6], ['C', 'F', 2], ['B', 'F', 9]] } };
+  return out;
+}
+/** Árvore montada pelo aluno: cada par [u, v] liga um vértice já descoberto a um novo. Pares inválidos são ignorados. */
+function bArvore_(G, s, arestas) {
+  var tem = {}, i, ordem = [s], pred = {}, na = {};
+  for (i = 0; i < G.E.length; i++) tem[bChave_(G.E[i][0], G.E[i][1])] = 1;
+  na[s] = 1;
+  arestas = arestas || [];
+  for (i = 0; i < arestas.length && i < 60; i++) {
+    var e = arestas[i]; if (!e || e.length < 2) continue;
+    var u = String(e[0]), v = String(e[1]);
+    if (!tem[bChave_(u, v)]) continue;
+    if (na[v] && !na[u]) { var x = u; u = v; v = x; }
+    if (!na[u] || na[v]) continue;
+    na[v] = 1; pred[v] = u; ordem.push(v);
+  }
+  return { ordem: ordem, pred: pred };
+}
+/** Correção: na BFS e na DFS, 1 ponto por posição certa na ordem de descoberta e 1 por predecessor certo; no Dijkstra, 1 por distância e 1 por anterior; 1 por questão teórica. */
+function bCorrige_(semente, resp) {
+  resp = resp || {};
+  var ex = bExercicios_(semente), pontos = 0, max = 0, det = { e1: 0, e2: 0, e3: 0, quiz: 0 }, i, v;
+  var arv = ['e1', 'e2'];
+  for (var a = 0; a < arv.length; a++) {
+    var k = arv[a], X = ex[k], gab = k === 'e1' ? bBfs_(X.G, X.s) : bDfs_(X.G, X.s);
+    var meu = bArvore_(X.G, X.s, (resp[k] || {}).arestas);
+    for (i = 1; i < gab.ordem.length; i++) {
+      max++;
+      if (meu.ordem[i] === gab.ordem[i]) { pontos++; det[k]++; }
+      v = gab.ordem[i]; max++;
+      if (meu.pred[v] === gab.pred[v]) { pontos++; det[k]++; }
+    }
+  }
+  var X3 = ex.e3, g3 = bDijkstra_(X3.G, X3.s), r3 = resp.e3 || {}, rd = r3.dist || {}, rp = r3.pred || {};
+  for (i = 0; i < X3.G.V.length; i++) {
+    v = X3.G.V[i]; if (v === X3.s) continue;
+    max += 2;
+    if (rd[v] !== '' && rd[v] != null && Number(rd[v]) === g3.dist[v]) { pontos++; det.e3++; }
+    if (String(rp[v] == null ? '' : rp[v]) === g3.pred[v]) { pontos++; det.e3++; }
+  }
+  var qz = resp.quiz || {};
+  for (var q = 0; q < BUSCA_QUIZ_N; q++) { max++; if (qz['q' + q] === 0) { pontos++; det.quiz++; } }
+  return { pontos: pontos, max: max, det: det };
+}
+/* ===== fim do motor ===== */
+
+/* ================= Grafos dos slides ================= */
+const W_ = s => s.split(' ').map(t => { const [u, v, w] = t.split('-'); return w == null ? [u, v] : [u, v, Number(w)]; });
+const GRAFOS = {
+  g11:{ nome:'Slides: grafo de 11 vértices', V:'1 2 3 4 5 6 7 8 9 10 11'.split(' '), P:{1:[0,0],2:[1,0],8:[2,0],10:[3,0],3:[0,1],4:[1,1],7:[2,1],11:[3,1],5:[0,2],6:[1,2],9:[2,2]}, E:W_('1-2 1-3 2-3 2-4 2-8 2-11 3-4 3-5 4-7 4-8 4-9 5-6 7-10 7-11 10-11 9-11'), Q:{'2|11':[[1,-0.75],[4.4,-0.4]]}, s:'7', t:'6' },
+  st:{ nome:'Slides: de s até t (8 vértices)', V:'s a b c d e f t'.split(' '), P:{s:[0,1],a:[0.75,0.2],b:[2.3,0.2],c:[3.55,0.2],d:[1.5,0.97],t:[4.55,0.95],f:[0.75,1.75],e:[3.5,1.77]}, E:W_('s-a s-f a-b b-c a-d a-e d-c d-e b-t c-t f-d f-e e-t'), s:'s', t:'t' },
+  st12:{ nome:'Slides: de s até t (11 vértices)', V:'s a b c d e f g h i t'.split(' '), P:{s:[0,1],a:[0.93,0.1],e:[1.8,1],g:[2.6,1],h:[3.5,1],c:[0.93,1.9],f:[1.8,1.9],b:[0,2.8],d:[1.8,2.8],i:[3.5,1.88],t:[4.08,2.8]}, E:W_('s-a a-e s-c s-b c-e c-f e-f e-g g-h h-i i-t b-c b-d d-f'), s:'s', t:'t' },
+  dA:{ nome:'Slides: Dijkstra de A a E', w:true, V:'A B C D E'.split(' '), P:{A:[0,0],B:[1,0],C:[0,1],D:[1,1],E:[0.5,1.8]}, E:W_('A-B-2 A-C-4 B-C-1 B-D-7 C-D-2 C-E-10 D-E-2'), s:'A', t:'E' },
+  d3:{ nome:'Slides: rotas de A a F (slide 3)', w:true, V:'A B C D E F'.split(' '), P:{A:[0,1.02],B:[1.53,0],C:[2.4,0.83],D:[1.98,1.92],E:[3.72,0.28],F:[4.42,1.3]}, E:W_('A-B-2 B-E-2 B-C-4 C-F-1 A-D-5 D-F-4 E-F-4'), s:'A', t:'F' },
+  d31:{ nome:'Slides: Dijkstra de 1 a 5 (slide 31)', w:true, V:'1 2 3 4 5 6'.split(' '), P:{1:[0,1.94],2:[1.25,2.24],3:[1.13,0.82],4:[2.92,0.74],5:[1.7,0],6:[0.2,0.24]}, E:W_('1-2-7 1-3-9 1-6-14 2-3-10 2-4-15 3-4-11 3-6-2 4-5-6 5-6-9'), s:'1', t:'5' },
+  d6:{ nome:'Slides: de 1 a 6 (slide 6)', w:true, V:'1 2 3 4 5 6'.split(' '), P:{1:[0,1],3:[1.1,0.1],2:[1.1,1.9],4:[2.4,1],5:[3.5,0.1],6:[4.6,1]}, E:W_('1-3-5 1-2-8 3-4-12 2-4-2 4-5-4 4-6-9 5-6-4'), s:'1', t:'6' },
+};
+
+/* ================= Desenho de grafos ================= */
+const r1 = x => Math.round(x * 10) / 10;
+function bez(a, b, c, d, t){ const u = 1 - t; return [0, 1].map(i => u*u*u*a[i] + 3*u*u*t*b[i] + 3*u*t*t*c[i] + t*t*t*d[i]); }
+class GraphView {
+  constructor(svg, o = {}){
+    this.svg = svg; this.o = o; this.W = o.W || 720; this.R = 19;
+    svg.addEventListener('click', ev => {
+      const e = ev.target.closest('.ge'); if (e && this.o.onEdge){ this.o.onEdge(e.dataset.k, e); return; }
+      const n = ev.target.closest('.gn'); if (n && this.o.onNode) this.o.onNode(n.dataset.v, n);
+    });
+  }
+  set(G){
+    this.G = G; const svg = this.svg; svg.textContent = '';
+    this.W = this.o.W || (window.innerWidth < 600 ? 440 : 720);
+    const pts = G.V.map(v => G.P[v]);
+    Object.entries(G.Q || {}).forEach(([k, cs]) => { const [u, v] = k.split('|'); for (let t = 0; t <= 1; t += 0.1) pts.push(bez(G.P[u], cs[0], cs[1], G.P[v], t)); });
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const pad = 42, W = this.W, dx = Math.max(x1 - x0, 0.01), dy = Math.max(y1 - y0, 0.01);
+    let s = Math.min((W - 2*pad)/dx, 165); if (dy*s > 360) s = 360/dy;
+    const H = Math.round(2*pad + dy*s), ox = (W - dx*s)/2;
+    const xy = p => [r1(ox + (p[0] - x0)*s), r1(pad + (p[1] - y0)*s)];
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const gE = mk('g'), gW = mk('g'), gN = mk('g'); svg.append(gE, gW, gN);
+    this.eg = new Map(); this.ng = new Map();
+    for (const e of G.E){
+      const k = bChave_(e[0], e[1]), [u, v] = k.split('|'), A = xy(G.P[u]), B = xy(G.P[v]), q = G.Q && G.Q[k];
+      let d, mid;
+      if (q){ const c1 = xy(q[0]), c2 = xy(q[1]); d = `M${A} C${c1} ${c2} ${B}`; mid = bez(A, c1, c2, B, 0.5); }
+      else { d = `M${A} L${B}`; mid = [(A[0] + B[0])/2, (A[1] + B[1])/2]; }
+      const g = mk('g', { class:'ge' }); g.dataset.k = k;
+      g.append(mk('path', { class:'hit', d }), mk('path', { class:'ln', d }));
+      gE.append(g); this.eg.set(k, g);
+      if (G.w && e[2] != null){
+        const t = String(e[2]), wg = mk('g', { class:'gw' }), bw = 10 + 8*t.length;
+        wg.append(mk('rect', { x:r1(mid[0] - bw/2), y:r1(mid[1] - 10), width:bw, height:20, rx:6 }));
+        const tx = mk('text', { x:r1(mid[0]), y:r1(mid[1]) }); tx.textContent = t; wg.append(tx); gW.append(wg);
+      }
+    }
+    for (const v of G.V){
+      const [x, y] = xy(G.P[v]), g = mk('g', { class:'gn', transform:`translate(${x},${y})` }); g.dataset.v = v;
+      g.append(mk('circle', { class:'ring', r:this.R + 6 }), mk('circle', { class:'c', r:this.R }));
+      const t = mk('text', { class:'lb' }); t.textContent = v; g.append(t);
+      const b = mk('text', { class:'gb', x:this.R*0.72, y:-this.R - 5 }); g.append(b);
+      gN.append(g); this.ng.set(v, g);
+    }
+  }
+  render(F = {}){
+    const v = F.v || {}, e = F.e || {}, b = F.b || {}, bc = F.bc || {};
+    this.ng.forEach((g, id) => { g.setAttribute('class', 'gn ' + (v[id] || '')); const t = g.lastChild; t.textContent = b[id] != null ? b[id] : ''; t.setAttribute('class', 'gb ' + (bc[id] || '')); });
+    this.eg.forEach((g, k) => g.setAttribute('class', 'ge ' + (e[k] || '')));
+  }
+  flash(k){ const g = this.eg.get(k); if (!g) return; g.classList.remove('flash'); void g.getBBox(); g.classList.add('flash'); }
+}
+
+/* ================= Reprodutor: passos e 5 velocidades ================= */
+const SPEEDS = [['Muito lento', 0.35], ['Lento', 0.6], ['Normal', 1], ['Rápido', 1.7], ['Muito rápido', 3]];
+const STRIP = `<button class="btn" type="button" data-pc="first" title="Primeiro passo" aria-label="Primeiro passo">⏮</button><button class="btn" type="button" data-pc="back" title="Passo anterior" aria-label="Passo anterior">◀</button><button class="btn btn-primary" type="button" data-pc="toggle" aria-label="Reproduzir ou pausar">▶</button><button class="btn" type="button" data-pc="step" title="Próximo passo" aria-label="Próximo passo">▶|</button><button class="btn" type="button" data-pc="end" title="Último passo" aria-label="Último passo">⏭</button><span class="pc-count"></span><label class="spd">Velocidade <select data-speed aria-label="Velocidade da exibição automática">${SPEEDS.map(([t, f]) => `<option value="${f}"${f === 1 ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
+class Player {
+  constructor(render, o = {}){ this.render = render; this.f = []; this.i = 0; this.timer = null; this.playing = false; this.ms = o.ms || 1500; this.spd = 1; this.ctrl = null; }
+  load(frames, play = false){ this.pause(true); this.f = frames; this.i = 0; if (frames.length) this.render(frames[0], 0, this); this.state(); if (play) this.play(); }
+  go(k){ if (!this.f.length) return; this.i = Math.max(0, Math.min(this.f.length - 1, k)); this.render(this.f[this.i], this.i, this); this.state(); }
+  play(){ if (this.f.length < 2) return; if (this.i >= this.f.length - 1) this.go(0); this.playing = true; this.sched(); this.state(); }
+  sched(){
+    clearTimeout(this.timer);
+    const ms = reduce ? 900 : (this.f[this.i].ms || this.ms) / this.spd;
+    this.timer = setTimeout(() => { if (!this.playing) return; this.go(this.i + 1); if (this.i >= this.f.length - 1){ this.playing = false; this.state(); } else this.sched(); }, ms);
+  }
+  pause(silent){ this.playing = false; clearTimeout(this.timer); this.timer = null; if (!silent) this.state(); }
+  toggle(){ this.playing ? this.pause() : this.play(); }
+  first(){ this.pause(); this.go(0); } back(){ this.pause(); this.go(this.i - 1); } step(){ this.pause(); this.go(this.i + 1); } end(){ this.pause(); this.go(this.f.length - 1); }
+  attach(el){
+    el.innerHTML = STRIP; this.ctrl = el;
+    el.addEventListener('click', e => { const b = e.target.closest('[data-pc]'); if (!b || b.disabled) return; const a = b.dataset.pc; if (['first', 'back', 'toggle', 'step', 'end'].includes(a)) this[a](); });
+    const sel = el.querySelector('[data-speed]'); sel.addEventListener('change', () => { this.spd = Number(sel.value) || 1; if (this.playing) this.sched(); });
+    this.state(); return this;
+  }
+  state(){
+    if (!this.ctrl) return;
+    const n = this.f.length, q = k => this.ctrl.querySelector(`[data-pc="${k}"]`);
+    q('first').disabled = q('back').disabled = this.i <= 0 || !n;
+    q('step').disabled = q('end').disabled = this.i >= n - 1;
+    const t = q('toggle'); t.textContent = this.playing ? '❚❚' : '▶'; t.disabled = n < 2; t.title = this.playing ? 'Pausar' : 'Reproduzir';
+    this.ctrl.querySelector('.pc-count').textContent = n ? `passo ${this.i + 1} de ${n}` : '';
+  }
+}
+
+/* ================= Quadros dos algoritmos ================= */
+const PSEUDO = {
+  bfs:['s.visitado = 1', 'cria fila vazia F', 'ENFILEIRA(F, s)', 'enquanto F.tamanho > 0 faça', '  u = DESENFILEIRA(F)', '  para todo vértice v ∈ N(u) faça', '    se v.visitado == 0 então', '      v.visitado = 1', '      v.predecessor = u', '      ENFILEIRA(F, v)'],
+  dfs:['s.visitado = 1', 'cria pilha vazia P', 'EMPILHA(P, s)', 'enquanto P.tamanho > 0 faça', '  u = CONSULTA(P)', '  se existe uv ∈ E(G) com v.visitado == 0 então', '    v.visitado = 1', '    v.predecessor = u', '    EMPILHA(P, v)', '  senão', '    DESEMPILHA(P)'],
+  dij:['para todo vértice v ∈ V(D) faça', '  v.predecessor = null', '  v.distancia = ∞', '  v.visitado = 0', 's.distancia = 0', 'enquanto houver u com u.visitado == 0 e u.distancia ≠ ∞ faça', '  seja x o não visitado com menor x.distancia', '  x.visitado = 1', '  para todo vértice y ∈ N⁺(x) faça', '    se y.visitado == 0 então', '      se x.distancia + w(xy) < y.distancia então', '        y.distancia = x.distancia + w(xy)', '        y.predecessor = x'],
+};
+const DSNAME = { bfs:'Fila', dfs:'Pilha' };
+function cellsHTML(items, o = {}){
+  const c = items.map(x => `<span class="${o.nw && o.nw.has(x) ? 'nw' : ''}${o.mn === x ? ' mn' : ''}">${esc(x)}</span>`);
+  if (o.outFront != null) c.unshift(`<span class="out">${esc(o.outFront)}</span>`);
+  if (o.outEnd != null) c.push(`<span class="out">${esc(o.outEnd)}</span>`);
+  return `<div class="cells">${c.join('') || `<span class="em">${o.vazia || 'vazia'}</span>`}</div>`;
+}
+const dsRow = (name, html) => `<div class="dsl"><span class="dsn">${name}</span>${html}</div>`;
+function tabHTML(V, rows, hi){
+  return `<thead><tr><th>Vértice</th>${V.map(v => `<th>${esc(v)}</th>`).join('')}</tr></thead><tbody>${rows.map(([nm, f]) => `<tr><th>${nm}</th>${V.map(v => `<td class="${hi && hi.has(nm + ':' + v) ? 'hi' : ''}">${f(v)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+const fmtD = x => x === Infinity ? '∞' : x;
+function pathFrames(F, s, t, pred, summ){
+  if (!t || t === s || !F.length) return;
+  const last = F[F.length - 1];
+  if (pred[t] == null){ F.push(Object.assign({}, last, { ln:[], cap:`<b>${esc(t)}</b> não foi alcançado a partir de ${esc(s)}: não há caminho.` })); return; }
+  const ch = [t]; while (ch[ch.length - 1] !== s) ch.push(pred[ch[ch.length - 1]]);
+  for (let i = 1; i < ch.length; i++){
+    const v = Object.assign({}, last.v), e = Object.assign({}, last.e);
+    ch.slice(0, i + 1).forEach(x => { v[x] = (v[x] || '') + ' path'; });
+    for (let j = 0; j < i; j++) e[bChave_(ch[j], ch[j + 1])] = 'path';
+    F.push(Object.assign({}, last, { v, e, ln:[], ms:1200, cap: i < ch.length - 1 ? `Backtracking a partir de <b>${esc(t)}</b>: o predecessor de <b>${esc(ch[i - 1])}</b> é <b>${esc(ch[i])}</b>.` : `O predecessor de <b>${esc(ch[i - 1])}</b> é <b>${esc(s)}</b>, o início. Caminho: <b>${ch.slice().reverse().map(esc).join(' – ')}</b>. ${summ(ch.length - 1)}` }));
+  }
+}
+function frBfs(G, s, t){
+  const A = bAdj_(G), V = G.V, vis = {}, pred = {}, niv = {}, fila = [], tree = new Set(), F = [];
+  let cur = null;
+  const snap = (cap, ln, o = {}) => {
+    const v = {}, e = {}, b = {};
+    V.forEach(x => { const c = []; if (x === s) c.push('start'); if (x === t) c.push('tgt'); if (x === cur) c.push('cur'); else if (vis[x]) c.push('mk'); if (o.nw && o.nw.has(x)) c.push('pop'); v[x] = c.join(' '); if (niv[x] != null) b[x] = 'λ' + niv[x]; });
+    tree.forEach(k => { e[k] = 'tr'; }); Object.assign(e, o.e || {});
+    F.push({ v, e, b, cap, ln, ms:o.ms, ds:dsRow('Fila', cellsHTML(fila, { nw:o.nw, outFront:o.out })),
+      tab:tabHTML(V, [['Visitados', x => vis[x] ? 1 : 0], ['Predecessor', x => x === s && vis[x] ? '–' : esc(pred[x] || 'N')], ['Nível λ', x => niv[x] != null ? niv[x] : '']], o.hi) });
+  };
+  snap(`Vértice inicial: <b>${esc(s)}</b>. Fila vazia e tabela inicializada: ninguém visitado.`, []);
+  vis[s] = 1; niv[s] = 0; fila.push(s);
+  snap(`Inserir <b>${esc(s)}</b> na fila e marcá-lo como visitado (nível λ = 0).`, [1, 2, 3], { nw:new Set([s]), hi:new Set(['Visitados:' + s, 'Predecessor:' + s, 'Nível λ:' + s]) });
+  while (fila.length){
+    const u = fila.shift(); cur = u;
+    snap(`Remover <b>${esc(u)}</b> da fila. Vizinhos de ${esc(u)}, em ordem: ${A[u].map(x => esc(x.v)).join(', ')}.`, [4, 5], { out:u });
+    const novos = [], look = {};
+    A[u].forEach(({ v:x }) => { const k = bChave_(u, x); if (!vis[x]){ vis[x] = 1; pred[x] = u; niv[x] = niv[u] + 1; fila.push(x); novos.push(x); tree.add(k); } else if (!tree.has(k)) look[k] = 'look'; });
+    const hi = new Set(); novos.forEach(x => ['Visitados', 'Predecessor', 'Nível λ'].forEach(r => hi.add(r + ':' + x)));
+    snap(novos.length ? `Vizinhos de <b>${esc(u)}</b> ainda não visitados: <b>${novos.map(esc).join(', ')}</b>. Marcar, anotar ${esc(u)} como predecessor (nível ${niv[u] + 1}) e inserir no fim da fila.${Object.keys(look).length ? ' Os tracejados levam a vértices já marcados: ficam de fora.' : ''}` : `Vizinhos de <b>${esc(u)}</b> ainda não visitados: <b>nenhum</b>.`, novos.length ? [6, 7, 8, 9, 10] : [6, 7], { nw:new Set(novos), hi, e:look });
+  }
+  cur = null;
+  snap('Fila vazia: todos os vértices alcançáveis foram visitados. <b>Fim da busca.</b> As arestas vermelhas formam a árvore da BFS.', [4]);
+  pathFrames(F, s, t, pred, n => `Menor caminho em número de arestas: <b>${n}</b> (passa por ${n + 1} vértices). Repare que λ(${esc(t)}) = ${n}.`);
+  return F;
+}
+function frDfs(G, s, t){
+  const A = bAdj_(G), V = G.V, vis = {}, pred = {}, fin = {}, pilha = [], F = [];
+  const snap = (cap, ln, o = {}) => {
+    const v = {}, e = {}, top = pilha[pilha.length - 1];
+    V.forEach(x => { const c = []; if (x === s) c.push('start'); if (x === t) c.push('tgt'); if (fin[x]) c.push('fin'); else if (vis[x]) c.push('stk' + (x === top ? ' top' : '')); if (o.nw && o.nw.has(x)) c.push('pop'); v[x] = c.join(' '); });
+    V.forEach(x => { if (pred[x]) e[bChave_(pred[x], x)] = fin[x] ? 'tr' : 'tb'; }); Object.assign(e, o.e || {});
+    F.push({ v, e, b:{}, cap, ln, ms:o.ms, ds:dsRow('Pilha', cellsHTML(pilha, { nw:o.nw, outEnd:o.out })) + '<p class="hint" style="margin:0">Topo da pilha: à direita.</p>',
+      tab:tabHTML(V, [['Visitados', x => vis[x] ? 1 : 0], ['Predecessor', x => x === s && vis[x] ? '–' : esc(pred[x] || 'N')]], o.hi) });
+  };
+  snap(`Vértice inicial: <b>${esc(s)}</b>. Pilha vazia e tabela de visitação inicializada.`, []);
+  vis[s] = 1; pilha.push(s);
+  snap(`Inserir <b>${esc(s)}</b> na pilha e marcá-lo como visitado.`, [1, 2, 3], { nw:new Set([s]), hi:new Set(['Visitados:' + s, 'Predecessor:' + s]) });
+  while (pilha.length){
+    const u = pilha[pilha.length - 1], livres = A[u].map(x => x.v).filter(x => !vis[x]);
+    if (livres.length){
+      const x = livres[0]; vis[x] = 1; pred[x] = u; pilha.push(x);
+      snap(`<b>${esc(u)}</b> (topo) tem vizinhos não visitados? <b>Sim</b>: ${livres.map(esc).join(', ')}. Vamos para o de menor número, <b>${esc(x)}</b>: inserir na pilha, marcar e anotar o predecessor ${esc(u)}.`, [4, 5, 6, 7, 8, 9], { nw:new Set([x]), hi:new Set(['Visitados:' + x, 'Predecessor:' + x]) });
+    } else {
+      fin[u] = 1; pilha.pop();
+      snap(`<b>${esc(u)}</b> (topo) tem vizinhos não visitados? <b>Não</b>. Remover ${esc(u)} do topo da pilha${pilha.length ? `: a busca volta para <b>${esc(pilha[pilha.length - 1])}</b>` : ''}.`, [4, 5, 6, 10, 11], { out:u });
+    }
+  }
+  snap('Pilha vazia: <b>algoritmo concluído</b>. As arestas da árvore da DFS ficaram em vermelho (vértices finalizados).', [4]);
+  pathFrames(F, s, t, pred, n => `A DFS chegou por um caminho de <b>${n}</b> aresta(s). Ela não garante o menor caminho: compare com a BFS no simulador.`);
+  return F;
+}
+function frDij(G, s, t){
+  const A = bAdj_(G), V = G.V, d = {}, p = {}, fech = {}, ordem = [], F = [];
+  V.forEach(x => { d[x] = Infinity; }); d[s] = 0;
+  let cur = null;
+  const snap = (cap, ln, o = {}) => {
+    const v = {}, e = {}, b = {}, bc = {};
+    V.forEach(x => { const c = []; if (x === s) c.push('start'); if (x === t) c.push('tgt'); if (x === cur) c.push('cur'); else if (fech[x]) c.push('mk'); v[x] = c.join(' '); b[x] = fmtD(d[x]); bc[x] = d[x] === Infinity ? 'inf' : (o.up && o.up.has(x) ? 'up' : ''); });
+    V.forEach(x => { if (p[x]) e[bChave_(p[x], x)] = fech[x] ? 'tr' : 'tt'; }); Object.assign(e, o.e || {});
+    const abertos = V.filter(x => !fech[x]);
+    F.push({ v, e, b, bc, cap, ln, ms:o.ms, ds:dsRow('Visitados', cellsHTML(ordem, { vazia:'nenhum' })) + dsRow('Abertos', cellsHTML(abertos, { mn:o.mn, vazia:'nenhum' })),
+      tab:tabHTML(V, [['Distância', x => fmtD(d[x])], ['Anterior', x => x === s ? '–' : esc(p[x] || '')], ['Visitado', x => fech[x] ? 1 : 0]], o.hi) });
+  };
+  snap(`Inicialização: distância 0 para <b>${esc(s)}</b> e ∞ para os demais; nenhum vértice visitado.`, [1, 2, 3, 4, 5]);
+  while (true){
+    let x = null; V.forEach(v => { if (!fech[v] && d[v] !== Infinity && (x === null || d[v] < d[x])) x = v; });
+    if (x === null) break;
+    const lista = V.filter(v => !fech[v] && d[v] !== Infinity).map(v => `${esc(v)} (${d[v]})`).join(', ');
+    cur = x; fech[x] = 1; ordem.push(x);
+    snap(`Abertos com distância finita: ${lista}. O menor é <b>${esc(x)}</b>: fechar ${esc(x)} (marcar como visitado). A distância dele, ${d[x]}, não muda mais.`, [6, 7, 8], { mn:x, hi:new Set(['Visitado:' + x]) });
+    let algum = false;
+    for (const { v:y, w } of A[x]){
+      if (fech[y]) continue;
+      algum = true;
+      const c = d[x] + w, k = bChave_(x, y);
+      if (c < d[y]){
+        const old = d[y]; d[y] = c; p[y] = x;
+        snap(`Relaxar ${esc(x)}–${esc(y)}: ${d[x]} + ${w} = <b>${c}</b> &lt; ${fmtD(old)}. ${old === Infinity ? 'Primeira estimativa' : 'Achamos um caminho mais curto'} para <b>${esc(y)}</b>: distância ${c}, anterior ${esc(x)}.`, [9, 10, 11, 12, 13], { e:{ [k]:'relax' }, up:new Set([y]), hi:new Set(['Distância:' + y, 'Anterior:' + y]) });
+      } else snap(`Relaxar ${esc(x)}–${esc(y)}: ${d[x]} + ${w} = ${c} ≥ ${d[y]}. Não melhora: ${esc(y)} continua com ${d[y]}.`, [9, 10, 11], { e:{ [k]:'look' } });
+    }
+    if (!algum) snap(`${esc(x)} não tem vizinhos abertos: nada a relaxar.`, [9, 10]);
+  }
+  cur = null;
+  snap(`Não há vértice aberto com distância finita: <b>fim</b>. Cada distância é o custo do menor caminho a partir de ${esc(s)}; as arestas vermelhas formam a árvore de menores caminhos.`, [6]);
+  pathFrames(F, s, t, p, () => `Custo total: <b>${d[t]}</b>.`);
+  return F;
+}
+const FR = { bfs:frBfs, dfs:frDfs, dij:frDij };
+const LEG = {
+  bfs:'<span><i class="cur"></i>removido da fila agora</span><span><i class="mk"></i>marcado</span><span><s></s>árvore da BFS</span><span><s class="o"></s>já marcado (ignorado)</span><span><i class="path"></i>caminho</span>',
+  dfs:'<span><i class="stk"></i>na pilha</span><span><i class="fin"></i>finalizado</span><span><s class="b"></s>trilha atual</span><span><s></s>trilha finalizada</span><span><i class="path"></i>caminho</span>',
+  dij:'<span><i class="cur"></i>fechado agora</span><span><i class="mk"></i>visitado (fechado)</span><span><s class="t"></s>melhor caminho provisório</span><span><s></s>definitivo</span><span><i class="path"></i>caminho</span>',
+};
+
+/* ---------- visualizador genérico (seções 2 a 5) ---------- */
+class AlgoView {
+  constructor(root, o){
+    this.root = root; this.o = o;
+    root.innerHTML = `<div class="row">${o.algos ? `<label class="ctl">Algoritmo <select data-c="algo"><option value="bfs">BFS (largura)</option><option value="dfs">DFS (profundidade)</option><option value="dij">Dijkstra (com pesos)</option></select></label>` : ''}
+        <label class="ctl">Grafo <select data-c="g"></select></label>${o.rnd ? '<button class="btn sm" type="button" data-c="rnd">Sortear outro</button>' : ''}
+        <label class="ctl">Início <select data-c="s"></select></label><label class="ctl">Destino <select data-c="t"></select></label></div>
+      <div class="two"><div class="stack"><div class="gcanvas"><svg aria-label="Grafo"></svg></div><div class="caption" aria-live="polite"></div><div class="pstrip"></div><div class="legend"></div></div>
+        <div class="stack"><div class="ds"></div><div class="tblwrap"><table class="vt"></table></div><pre class="pseudo"></pre><p class="hint" data-c="nota"></p></div></div>`;
+    this.c = k => root.querySelector(`[data-c="${k}"]`);
+    this.gv = new GraphView($('svg', root));
+    this.player = new Player(F => this.show(F), { ms:1600 }).attach($('.pstrip', root));
+    this.fillGraphs();
+    this.c('g').addEventListener('change', () => this.pickGraph());
+    ['s', 't'].forEach(k => this.c(k).addEventListener('change', () => this.run(true)));
+    if (o.algos) this.c('algo').addEventListener('change', () => this.run(true));
+    if (o.rnd) this.c('rnd').addEventListener('click', () => { if (!/^rnd/.test(this.c('g').value)) this.c('g').value = this.algo() === 'dij' ? 'rndw' : 'rnd'; this.pickGraph(true); });
+  }
+  algo(){ return this.o.algos ? this.c('algo').value : this.o.algo; }
+  fillGraphs(){
+    const sel = this.c('g'), cur = sel.value, ops = this.o.graphs.map(k => `<option value="${k}">${esc(GRAFOS[k].nome)}</option>`);
+    if (this.o.rnd){ ops.push('<option value="rnd">Aleatório: 9 vértices, sem pesos</option>', '<option value="rndw">Aleatório: 6 vértices, com pesos</option>'); if (EXS) ops.push('<option value="ex1">Exercício 1 (BFS)</option>', '<option value="ex2">Exercício 2 (DFS)</option>', '<option value="ex3">Exercício 3 (Dijkstra)</option>'); }
+    sel.innerHTML = ops.join(''); if ([...sel.options].some(x => x.value === cur)) sel.value = cur;
+  }
+  graphOf(k, fresh){
+    if (GRAFOS[k]) return GRAFOS[k];
+    if (k === 'ex1' || k === 'ex2' || k === 'ex3'){ const X = EXS[k.replace('ex', 'e')]; return Object.assign({}, X.G, { w:k === 'ex3', s:X.s }); }
+    if (!fresh && this.rg && this.rg.k === k) return this.rg;
+    const rnd = bRng_((Date.now() ^ Math.floor(Math.random()*1e9)) >>> 0);
+    let G;
+    if (k === 'rnd'){ G = bGrade_(rnd, 4, 3, 9, 13, '1 2 3 4 5 6 7 8 9'.split(' ')); G.s = G.V[0]; }
+    else { G = bGrade_(rnd, 3, 2, 6, 8, 'A B C D E F'.split(' ')); G.E.forEach(e => e.push(1 + Math.floor(rnd()*9))); G.w = true; G.s = 'A'; }
+    G.k = k; this.rg = G; return G;
+  }
+  pickGraph(fresh = false, play = true){
+    const G = this.graphOf(this.c('g').value, fresh);
+    this.c('s').innerHTML = G.V.map(v => `<option>${esc(v)}</option>`).join(''); this.c('s').value = G.s || G.V[0];
+    this.c('t').innerHTML = '<option value="">nenhum</option>' + G.V.map(v => `<option>${esc(v)}</option>`).join(''); this.c('t').value = G.t || '';
+    this.run(play);
+  }
+  run(play = false){
+    const G = this.graphOf(this.c('g').value), a = this.algo(), s = this.c('s').value, t = this.c('t').value || null;
+    this.gv.set(G);
+    $('pre.pseudo', this.root).innerHTML = PSEUDO[a].map((l, k) => `<span class="ln" data-n="${k + 1}">${esc(l)}</span>`).join('');
+    this.lns = $$('pre.pseudo .ln', this.root);
+    $('.legend', this.root).innerHTML = LEG[a];
+    this.c('nota').textContent = a === 'dij' && !G.w ? 'Grafo sem pesos: o Dijkstra usa peso 1 em todas as arestas e dá o mesmo resultado da BFS.' : a !== 'dij' && G.w ? 'A BFS e a DFS ignoram os pesos das arestas.' : '';
+    this.player.load(FR[a](G, s, t), play);
+  }
+  show(F){
+    this.gv.render(F);
+    $('.caption', this.root).innerHTML = F.cap; $('.ds', this.root).innerHTML = F.ds; $('.vt', this.root).innerHTML = F.tab;
+    this.lns.forEach((l, k) => l.classList.toggle('on', (F.ln || []).includes(k + 1)));
+  }
+}
+
+/* ================= Seções recolhíveis ================= */
+const SKEY = 'busca-comp-secoes';
+let closedSet = new Set(); try { closedSet = new Set(JSON.parse(localStorage.getItem(SKEY) || '[]')); } catch (_) {}
+function setSec(sec, open){
+  sec.classList.toggle('closed', !open);
+  const b = sec.querySelector('.collapse'); b.setAttribute('aria-expanded', String(open)); b.querySelector('.ct').textContent = open ? 'Esconder seção' : 'Mostrar seção';
+  if (open) closedSet.delete(sec.id); else closedSet.add(sec.id);
+  try { localStorage.setItem(SKEY, JSON.stringify([...closedSet])); } catch (_) {}
+}
+$$('[data-sec]').forEach(sec => { sec.querySelector('.collapse').addEventListener('click', () => setSec(sec, sec.classList.contains('closed'))); if (closedSet.has(sec.id)) setSec(sec, false); });
+$('#all-close').addEventListener('click', () => $$('[data-sec]').forEach(s => setSec(s, false)));
+$('#all-open').addEventListener('click', () => $$('[data-sec]').forEach(s => setSec(s, true)));
+$$('nav.toc a').forEach(a => a.addEventListener('click', () => { const s = document.querySelector(a.getAttribute('href')); if (s && s.classList.contains('closed')) setSec(s, true); }));
+
+/* ================= 1. BFS × DFS ================= */
+const dB = new GraphView($('#d-b')), dD = new GraphView($('#d-d'));
+const dPlayer = new Player(F => { dB.render(F.B); dD.render(F.D); $('#d-bc').innerHTML = F.bc; $('#d-dc').innerHTML = F.dc; }, { ms:1500 }).attach($('#d-strip'));
+function frDemo(G, s){
+  const b = bBfs_(G, s), d = bDfs_(G, s), n = G.V.length, F = [];
+  for (let k = 0; k < n; k++){
+    const view = (R, cls, ecls) => { const v = {}, e = {}, bb = {}; R.ordem.slice(0, k + 1).forEach((x, i) => { v[x] = cls + (i === k ? ' new' : '') + (x === s ? ' start' : ''); bb[x] = i + 1; if (R.pred[x]) e[bChave_(R.pred[x], x)] = ecls; }); return { v, e, b:bb }; };
+    const x = b.ordem[k], y = d.ordem[k];
+    F.push({ B:view(b, 'mk', 'tr'), D:view(d, 'stk', 'tb'), ms:1500,
+      bc: k ? `${k + 1}º: <b>${esc(x)}</b>, vizinho de ${esc(b.pred[x])} (camada λ = ${b.niv[x]}).` : `Início em <b>${esc(s)}</b> (camada 0).`,
+      dc: k ? (d.pred[y] === d.ordem[k - 1] ? `${k + 1}º: <b>${esc(y)}</b>, descendo a partir de ${esc(d.pred[y])}.` : `${k + 1}º: <b>${esc(y)}</b>. ${esc(d.ordem[k - 1])} não tinha saída: a busca volta até ${esc(d.pred[y])} e desce.`) : `Início em <b>${esc(s)}</b>.` });
+  }
+  return F;
+}
+function demoRun(play){ const G = GRAFOS.g11, s = $('#d-s').value; dB.set(G); dD.set(G); dPlayer.load(frDemo(G, s), play); }
+$('#d-s').innerHTML = GRAFOS.g11.V.map(v => `<option>${v}</option>`).join(''); $('#d-s').value = '7';
+$('#d-s').addEventListener('change', () => demoRun(true));
+
+/* ================= Competição: configuração ================= */
+// 1) Cole aqui a URL do App da Web do Google Apps Script (termina em /exec):
+const SCRIPT_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+// 2) Identificação da turma, gravada junto com cada envio:
+const TURMA = 'GRAFOS';
+const CONFIGURED = /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(SCRIPT_URL);
+const SEMENTE_TESTE = 20261111;
+const uuid = () => window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+const mmss = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s/3600), m = Math.floor((s % 3600)/60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(x).padStart(2, '0'); };
+const hora = iso => { try { return new Date(iso).toLocaleTimeString('pt-BR'); } catch (_) { return ''; } };
+
+/* ---------- estado do aluno (fica neste navegador) ---------- */
+const STORE_KEY = 'busca-competicao-v1';
+const vazio = () => ({ e1:{ arestas:[] }, e2:{ arestas:[] }, e3:{ dist:{}, pred:{} } });
+function loadState(){ try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); if (s && s.aluno) return s; } catch (_) {} return null; }
+const ST = loadState() || Object.assign({ aluno:uuid(), nome:'', mat:'', rodada:null, semente:null, quiz:{}, qseed:Math.floor(Math.random()*2147483647) }, vazio());
+function saveState(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(ST)); } catch (_) {} }
+const SRV = { status:CONFIGURED ? 'carregando' : 'teste', inicio:0, fim:0, offset:0, semente:CONFIGURED ? null : SEMENTE_TESTE };
+const nowSrv = () => Date.now() + SRV.offset;
+let EXS = null;
+const respostas = () => ({ e1:ST.e1, e2:ST.e2, e3:ST.e3, quiz:ST.quiz });
+const nota = () => SRV.semente ? bCorrige_(SRV.semente, respostas()) : { pontos:0, max:50, det:{ e1:0, e2:0, e3:0, quiz:0 } };
+const acabou = () => !CONFIGURED || SRV.status === 'encerrada' || (SRV.status === 'andamento' && nowSrv() > SRV.fim);
+
+/* ---------- exercícios 1 e 2: montar a árvore clicando nas arestas ---------- */
+const LOCK_HTML = '<div class="locked" data-lock><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg><div><b>Aguardando o início da competição</b><p>O exercício abre quando o professor iniciar o cronômetro. A página verifica sozinha, não precisa recarregar.</p></div></div>';
+const CORR_BTN = '<button class="btn" type="button" data-r="corr" hidden>Ver correção</button><button class="btn" type="button" data-r="simx" hidden>Ver passo a passo no simulador</button>';
+class TreeEx {
+  constructor(k, algo){
+    this.k = k; this.algo = algo; this.corr = false;
+    const box = $(`[data-ex="${k}"]`), nomeAlg = algo === 'bfs' ? 'BFS' : 'DFS';
+    box.innerHTML = LOCK_HTML + `<div data-gated hidden><div class="two">
+      <div class="card"><div class="row spread"><span class="lbl">Grafo do exercício</span><span class="expts" data-r="pts"></span></div>
+        <div class="gcanvas"><svg aria-label="Grafo do exercício ${k.slice(1)}"></svg></div>
+        <div class="row"><button class="btn" type="button" data-r="undo">↶ Desfazer última</button><button class="btn danger" type="button" data-r="reset">Recomeçar</button>${CORR_BTN}</div>
+        <div class="send-panel" data-r="confirm" hidden></div>
+        <div class="fb" data-r="fb" aria-live="polite"></div></div>
+      <div class="card"><span class="lbl">Ordem de descoberta</span><div data-r="ordem"></div>
+        <div class="tblwrap"><table class="vt" data-r="tab"></table></div>
+        <p class="hint-a">Cada clique liga um vértice já descoberto (azul) a um vértice novo: o novo recebe o próximo número da ordem e o outro vira o predecessor dele. As arestas pontilhadas são as que podem ser escolhidas agora. A ${nomeAlg} começa no vértice marcado com o anel e examina os vizinhos em ordem crescente.</p></div>
+    </div></div>`;
+    this.box = box; this.r = n => box.querySelector(`[data-r="${n}"]`);
+    this.gv = new GraphView($('.gcanvas svg', box), { onEdge:key => this.click(key) });
+    this.r('undo').addEventListener('click', () => this.undo());
+    this.r('reset').addEventListener('click', () => this.askReset());
+    this.r('corr').addEventListener('click', () => { this.corr = !this.corr; this.render(); });
+    this.r('simx').addEventListener('click', () => verNoSimulador(this.k === 'e1' ? 'ex1' : 'ex2', this.algo));
+    this.ready = false;
+  }
+  get S(){ return ST[this.k]; }
+  load(X){ this.X = X; this.gab = this.algo === 'bfs' ? bBfs_(X.G, X.s) : bDfs_(X.G, X.s); this.gv.set(X.G); this.ready = true; this.corr = false; this.msg(`Comece pelo vértice <b>${esc(X.s)}</b>: clique na aresta que leva ao primeiro vértice que a ${this.algo === 'bfs' ? 'BFS' : 'DFS'} descobre.`); this.render(); }
+  tree(){ return bArvore_(this.X.G, this.X.s, this.S.arestas); }
+  editable(){ return this.ready && !this.corr && !(CONFIGURED && acabou()); }
+  msg(html, cls = ''){ this.r('fb').className = 'fb ' + cls; this.r('fb').innerHTML = html; }
+  click(key){
+    if (!this.editable()) return;
+    const [u, v] = key.split('|'), T = this.tree(), inU = T.ordem.includes(u), inV = T.ordem.includes(v);
+    if (inU && inV){ this.gv.flash(key); this.msg(`Os dois vértices (${esc(u)} e ${esc(v)}) já foram descobertos: essa aresta não entra na árvore.`, 'bad'); return; }
+    if (!inU && !inV){ this.gv.flash(key); this.msg(`Nem ${esc(u)} nem ${esc(v)} foram descobertos ainda. Escolha uma aresta que sai de um vértice azul.`, 'bad'); return; }
+    const p = inU ? u : v, c = inU ? v : u;
+    this.S.arestas.push([p, c]); saveState();
+    this.msg(`<b>${esc(c)}</b> descoberto a partir de <b>${esc(p)}</b> (posição ${T.ordem.length + 1} da ordem). ${T.ordem.length + 1 === this.X.G.V.length ? 'Todos os vértices foram descobertos. Confira e envie quando quiser.' : ''}`);
+    this.render(); updPts();
+  }
+  undo(){
+    if (!this.editable() || !this.S.arestas.length) return;
+    const e = this.S.arestas.pop(); saveState();
+    this.msg(`Desfeito: ${esc(e[1])} voltou a ser não descoberto.`); this.render(); updPts();
+  }
+  askReset(){
+    if (!this.editable() || !this.S.arestas.length) return;
+    const c = this.r('confirm'); c.hidden = false;
+    c.innerHTML = '<span>Apagar toda a árvore deste exercício e começar de novo?</span><div class="row"><button class="btn btn-primary" type="button" data-a="go">Apagar</button><button class="btn" type="button" data-a="no">Cancelar</button></div>';
+    c.onclick = ev => { const b = ev.target.closest('[data-a]'); if (!b) return; c.hidden = true; if (b.dataset.a === 'go'){ this.S.arestas = []; saveState(); this.msg('Árvore apagada. Recomece pelo vértice inicial.'); this.render(); updPts(); } };
+  }
+  pts(){ const T = this.tree(), g = this.gab; let p = 0; for (let i = 1; i < g.ordem.length; i++){ if (T.ordem[i] === g.ordem[i]) p++; if (T.pred[g.ordem[i]] === g.pred[g.ordem[i]]) p++; } return p; }
+  render(){
+    if (!this.ready) return;
+    const G = this.X.G, s = this.X.s, T = this.tree(), inT = new Set(T.ordem), n = G.V.length, g = this.gab;
+    const last = this.S.arestas.length ? T.ordem[T.ordem.length - 1] : null, v = {}, e = {}, b = {};
+    if (this.corr){
+      G.V.forEach(x => { v[x] = (x === s ? 'start ' : '') + (x === s || T.pred[x] === g.pred[x] ? 'ok' : 'bad'); });
+      g.ordem.forEach((x, i) => { b[x] = i + 1; });
+      G.V.forEach(x => { if (g.pred[x]) e[bChave_(g.pred[x], x)] = 'gab'; });
+      G.V.forEach(x => { if (T.pred[x]) e[bChave_(T.pred[x], x)] = T.pred[x] === g.pred[x] ? 'ok' : 'bad'; });
+    } else {
+      G.V.forEach(x => { v[x] = (x === s ? 'start ' : '') + (inT.has(x) ? 'mine' : '') + (x === last ? ' new' : ''); });
+      T.ordem.forEach((x, i) => { b[x] = i + 1; });
+      G.V.forEach(x => { if (T.pred[x]) e[bChave_(T.pred[x], x)] = 'mine'; });
+      G.E.forEach(([a, c]) => { const k = bChave_(a, c); if (!e[k]) e[k] = this.editable() && inT.has(a) !== inT.has(c) ? 'pick' : 'click'; });
+    }
+    this.gv.render({ v, e, b });
+    const ord = T.ordem.map(x => `<span>${esc(x)}</span>`).join('');
+    this.r('ordem').innerHTML = this.corr
+      ? `<div class="ds">${dsRow('Sua', `<div class="cells">${ord}</div>`)}${dsRow('Correta', `<div class="cells">${g.ordem.map(x => `<span>${esc(x)}</span>`).join('')}</div>`)}</div>`
+      : `<div class="cells">${ord}</div>`;
+    const pos = {}; T.ordem.forEach((x, i) => { pos[x] = i + 1; });
+    const gpos = {}; g.ordem.forEach((x, i) => { gpos[x] = i + 1; });
+    const rows = this.corr
+      ? [['Sua ordem', x => pos[x] || ''], ['Ordem certa', x => gpos[x]], ['Seu predec.', x => x === s ? '–' : esc(T.pred[x] || '')], ['Predec. certo', x => x === s ? '–' : esc(g.pred[x])]]
+      : [['Ordem', x => pos[x] || ''], ['Predecessor', x => x === s ? '–' : esc(T.pred[x] || '')]];
+    this.r('tab').innerHTML = tabHTML(G.V, rows);
+    if (this.corr) $$('tbody tr', this.r('tab')).forEach((tr, ri) => { if (ri === 0 || ri === 2) [...tr.children].slice(1).forEach((td, j) => { const x = G.V[j]; if (x === s) return; const ok = ri === 0 ? pos[x] === gpos[x] : T.pred[x] === g.pred[x]; td.className = ok ? 'okc' : 'badc'; }); });
+    this.r('pts').textContent = this.corr ? `${this.pts()} de ${2*(n - 1)} pontos` : `${T.ordem.length - 1} de ${n - 1} vértices descobertos`;
+    const ed = this.editable();
+    this.r('undo').disabled = !ed || !this.S.arestas.length; this.r('reset').disabled = !ed || !this.S.arestas.length;
+    this.r('corr').hidden = !acabou(); this.r('corr').textContent = this.corr ? (CONFIGURED ? 'Ver minha árvore' : 'Voltar a editar') : 'Ver correção';
+    this.r('simx').hidden = !acabou();
+    if (this.corr) this.msg(`<b>${this.pts()} de ${2*(n - 1)} pontos.</b> Verde: certo; vermelho: errado. As arestas tracejadas verdes são a árvore correta.`, this.pts() === 2*(n - 1) ? 'ok' : '');
+  }
+}
+
+/* ---------- exercício 3: tabela do Dijkstra ---------- */
+class DijEx {
+  constructor(){
+    this.k = 'e3'; this.corr = false; this.ready = false;
+    const box = $('[data-ex="e3"]');
+    box.innerHTML = LOCK_HTML + `<div data-gated hidden><div class="two">
+      <div class="card"><div class="row spread"><span class="lbl">Grafo com pesos</span><span class="expts" data-r="pts"></span></div>
+        <div class="gcanvas"><svg aria-label="Grafo do exercício 3"></svg></div>
+        <div class="row"><button class="btn danger" type="button" data-r="reset">Limpar respostas</button>${CORR_BTN}</div>
+        <div class="send-panel" data-r="confirm" hidden></div>
+        <div class="fb" data-r="fb" aria-live="polite"></div></div>
+      <div class="card"><span class="lbl">Resultado do Dijkstra a partir de A</span><div class="tblwrap"><table class="vt dtab" data-r="tab"></table></div>
+        <p class="hint-a">“Anterior” é o vértice que vem logo antes no menor caminho de A até ele. As escolhas aparecem no grafo em azul, e as distâncias, acima dos vértices.</p></div>
+    </div></div>`;
+    this.box = box; this.r = n => box.querySelector(`[data-r="${n}"]`);
+    this.gv = new GraphView($('.gcanvas svg', box));
+    this.r('tab').addEventListener('input', ev => this.edit(ev.target));
+    this.r('tab').addEventListener('change', ev => this.edit(ev.target));
+    this.r('reset').addEventListener('click', () => this.askReset());
+    this.r('corr').addEventListener('click', () => { this.corr = !this.corr; this.build(); this.render(); });
+    this.r('simx').addEventListener('click', () => verNoSimulador('ex3', 'dij'));
+  }
+  get S(){ return ST.e3; }
+  load(X){ this.X = X; this.gab = bDijkstra_(X.G, X.s); this.A = bAdj_(X.G); this.gv.set(Object.assign({}, X.G, { w:true })); this.ready = true; this.corr = false; this.build(); this.msg('Preencha a distância final e o anterior de cada vértice.'); this.render(); }
+  editable(){ return this.ready && !this.corr && !(CONFIGURED && acabou()); }
+  msg(html, cls = ''){ this.r('fb').className = 'fb ' + cls; this.r('fb').innerHTML = html; }
+  build(){
+    const G = this.X.G, s = this.X.s, dis = this.editable() ? '' : ' disabled', S = this.S, g = this.gab;
+    const rows = G.V.map(v => {
+      if (v === s) return `<tr><th>${esc(v)}</th><td>0</td><td>–</td></tr>`;
+      const dv = S.dist[v] != null ? S.dist[v] : '', pv = S.pred[v] || '';
+      const okD = dv !== '' && Number(dv) === g.dist[v], okP = pv === g.pred[v];
+      const cD = this.corr ? (okD ? 'okc' : 'badc') : '', cP = this.corr ? (okP ? 'okc' : 'badc') : '';
+      return `<tr><th>${esc(v)}</th><td class="${cD}"><input type="number" min="0" max="999" data-d="${esc(v)}" value="${esc(dv)}" aria-label="Distância de ${esc(v)}"${dis}>${this.corr ? `<span class="gabv">certo: ${g.dist[v]}</span>` : ''}</td>
+        <td class="${cP}"><select data-p="${esc(v)}" aria-label="Anterior de ${esc(v)}"${dis}><option value="">—</option>${this.A[v].map(x => `<option${x.v === pv ? ' selected' : ''}>${esc(x.v)}</option>`).join('')}</select>${this.corr ? `<span class="gabv">certo: ${esc(g.pred[v])}</span>` : ''}</td></tr>`;
+    }).join('');
+    this.r('tab').innerHTML = `<thead><tr><th>Vértice</th><th>Distância</th><th>Anterior</th></tr></thead><tbody>${rows}</tbody>`;
+  }
+  edit(el){
+    if (!this.editable()) return;
+    if (el.dataset.d){ const x = el.value.trim(); if (x === '') delete this.S.dist[el.dataset.d]; else this.S.dist[el.dataset.d] = Math.max(0, Math.min(999, Math.round(Number(x) || 0))); }
+    else if (el.dataset.p){ if (el.value) this.S.pred[el.dataset.p] = el.value; else delete this.S.pred[el.dataset.p]; }
+    else return;
+    saveState(); this.render(); updPts();
+  }
+  askReset(){
+    if (!this.editable()) return;
+    const c = this.r('confirm'); c.hidden = false;
+    c.innerHTML = '<span>Apagar todas as respostas deste exercício?</span><div class="row"><button class="btn btn-primary" type="button" data-a="go">Apagar</button><button class="btn" type="button" data-a="no">Cancelar</button></div>';
+    c.onclick = ev => { const b = ev.target.closest('[data-a]'); if (!b) return; c.hidden = true; if (b.dataset.a === 'go'){ ST.e3 = { dist:{}, pred:{} }; saveState(); this.build(); this.render(); updPts(); } };
+  }
+  filled(){ return Object.keys(this.S.dist).length + Object.keys(this.S.pred).length; }
+  pts(){ const g = this.gab; let p = 0; this.X.G.V.forEach(v => { if (v === this.X.s) return; if (this.S.dist[v] != null && Number(this.S.dist[v]) === g.dist[v]) p++; if (this.S.pred[v] === g.pred[v]) p++; }); return p; }
+  render(){
+    if (!this.ready) return;
+    const G = this.X.G, s = this.X.s, g = this.gab, v = {}, e = {}, b = {};
+    G.V.forEach(x => { v[x] = x === s ? 'start mk' : ''; b[x] = x === s ? 0 : (this.S.dist[x] != null ? this.S.dist[x] : ''); });
+    if (this.corr){ G.V.forEach(x => { if (g.pred[x]) e[bChave_(g.pred[x], x)] = 'gab'; }); }
+    G.V.forEach(x => { const p = this.S.pred[x]; if (p) e[bChave_(p, x)] = this.corr ? (p === g.pred[x] ? 'ok' : 'bad') : 'mine'; });
+    if (this.corr) G.V.forEach(x => { if (x !== s) v[x] = (this.S.pred[x] === g.pred[x] && Number(this.S.dist[x]) === g.dist[x] && this.S.dist[x] != null) ? 'ok' : 'bad'; });
+    this.gv.render({ v, e, b });
+    const nn = 2*(G.V.length - 1);
+    this.r('pts').textContent = this.corr ? `${this.pts()} de ${nn} pontos` : `${this.filled()} de ${nn} campos preenchidos`;
+    this.r('reset').disabled = !this.editable() || !this.filled();
+    this.r('corr').hidden = !acabou(); this.r('corr').textContent = this.corr ? (CONFIGURED ? 'Ver minhas respostas' : 'Voltar a editar') : 'Ver correção';
+    this.r('simx').hidden = !acabou();
+    if (this.corr) this.msg(`<b>${this.pts()} de ${nn} pontos.</b> Abaixo de cada campo está a resposta certa. As arestas tracejadas verdes formam a árvore de menores caminhos.`, this.pts() === nn ? 'ok' : '');
+  }
+}
+const EX = { e1:new TreeEx('e1', 'bfs'), e2:new TreeEx('e2', 'dfs'), e3:new DijEx() };
+function verNoSimulador(k, algo){
+  const v = AV.sim; v.fillGraphs(); v.c('g').value = k; v.c('algo').value = algo; v.pickGraph(false, true);
+  const sec = $('#sim'); if (sec.classList.contains('closed')) setSec(sec, true); sec.scrollIntoView({ behavior:reduce ? 'auto' : 'smooth' });
+}
+
+/* ---------- questões teóricas (só a primeira resposta conta) ---------- */
+const Q = [
+  { q:'Qual estrutura de dados a BFS usa para decidir o próximo vértice a explorar?', o:['Uma fila: o primeiro a entrar é o primeiro a sair', 'Uma pilha: o último a entrar é o primeiro a sair', 'Uma fila de prioridade ordenada pelos pesos', 'Nenhuma: ela escolhe o vértice de menor número'], a:0, w:'A BFS remove da frente e insere no fim. Quem foi descoberto primeiro é explorado primeiro, e por isso a busca anda em camadas.' },
+  { q:'E a DFS iterativa dos slides?', o:['Uma pilha: consulta o topo e, sem vizinho novo, desempilha', 'Uma fila, como a BFS', 'Uma fila de prioridade pela distância', 'Um vetor ordenado pelos rótulos'], a:0, w:'Empilhar e desempilhar é o que faz a DFS descer por uma trilha e voltar quando não há saída. A versão recursiva usa a pilha de chamadas.' },
+  { q:'Em um grafo não ponderado, a BFS a partir de s encontra…', o:['o caminho com o menor número de arestas de s até cada vértice', 'o caminho de menor soma de pesos, mesmo com pesos', 'um caminho que passa por todos os vértices', 'caminhos mínimos apenas se o grafo for uma árvore'], a:0, w:'O nível λ(v) é a menor quantidade de arestas entre s e v, e os predecessores levam de volta por um desses caminhos.' },
+  { q:'Por que a DFS, em geral, não serve para encontrar o menor caminho?', o:['Ela aprofunda por uma trilha antes de olhar alternativas e pode chegar ao destino por um caminho longo', 'Ela não visita todos os vértices alcançáveis', 'Ela só funciona em árvores', 'Ela precisa de pesos nas arestas'], a:0, w:'A DFS visita tudo, mas o caminho que ela registra até um vértice depende da ordem da trilha, não da distância.' },
+  { q:'A cada iteração, o algoritmo de Dijkstra escolhe…', o:['o vértice aberto com a menor distância estimada', 'o vizinho de menor rótulo do último vértice fechado', 'a aresta de menor peso de todo o grafo', 'o vértice com mais vizinhos'], a:0, w:'Com pesos não negativos, a menor estimativa entre os abertos já é definitiva: por isso ele pode fechar esse vértice.' },
+  { q:'Relaxar a aresta (x, y) significa…', o:['se d(x) + w(x, y) < d(y), fazer d(y) = d(x) + w(x, y) e anterior(y) = x', 'apagar a aresta para simplificar o grafo', 'trocar o peso da aresta pela média dos vizinhos', 'marcar y como visitado'], a:0, w:'É a tentativa de melhorar a estimativa de y passando por x. Se não melhora, nada muda.' },
+  { q:'Em qual situação o Dijkstra pode dar uma resposta errada?', o:['Quando há arestas com peso negativo', 'Quando o grafo tem ciclos', 'Quando várias arestas têm o mesmo peso', 'Quando o grafo tem mais de 100 vértices'], a:0, w:'Um peso negativo pode baratear depois um vértice que já foi fechado. Ciclos e pesos repetidos não são problema.' },
+  { q:'Terminada a busca, como se obtém o caminho de s até t?', o:['Seguindo os predecessores a partir de t até chegar em s e invertendo a lista (backtracking)', 'Lendo a ordem de remoção da fila', 'Somando os pesos de todas as arestas da árvore', 'Rodando a busca de novo a partir de t'], a:0, w:'Cada predecessor aponta um passo para trás; de t até s, isso reconstrói o caminho ao contrário.' },
+];
+const qperm = (() => { const r = bRng_(ST.qseed); return Q.map(q => { const idx = q.o.map((_, i) => i); for (let i = idx.length - 1; i > 0; i--){ const j = Math.floor(r()*(i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; } return idx; }); })();
+function renderQuiz(){
+  $('#quiz').innerHTML = Q.map((q, i) => `<div class="card q" data-q="${i}"><span class="qn">QUESTÃO ${i + 1} · 1 PONTO</span><h4>${q.q}</h4><div class="opts">${qperm[i].map((o, k) => `<button type="button" data-o="${o}">${String.fromCharCode(97 + k)}) ${q.o[o]}</button>`).join('')}</div><div class="why" hidden></div></div>`).join('');
+  $$('#quiz .q').forEach(card => markQ(card, +card.dataset.q)); qScore();
+}
+function markQ(card, i){
+  const ans = ST.quiz['q' + i]; if (ans === undefined) return;
+  card.querySelectorAll('.opts button').forEach(x => { x.disabled = true; const o = +x.dataset.o; if (o === Q[i].a) x.classList.add('right'); else if (o === ans) x.classList.add('wrong'); });
+  const w = card.querySelector('.why'); w.hidden = false; w.className = 'why' + (ans === Q[i].a ? '' : ' miss'); w.innerHTML = `<b>${ans === Q[i].a ? 'Correto. +1 ponto.' : 'Não é essa.'}</b> ${Q[i].w}`;
+}
+function qScore(){ const done = Q.filter((_, i) => ST.quiz['q' + i] !== undefined).length, right = Q.filter((q, i) => ST.quiz['q' + i] === q.a).length; $('#q-score').textContent = done ? `${right} de ${done} corretas · ${Q.length - done} restantes` : `0 de ${Q.length} respondidas`; $('#q-bar').style.width = (right/Q.length*100) + '%'; }
+$('#quiz').addEventListener('click', ev => {
+  const b = ev.target.closest('.opts button'); if (!b || b.disabled) return;
+  const card = b.closest('.q'), i = +card.dataset.q; if (ST.quiz['q' + i] !== undefined) return;
+  ST.quiz['q' + i] = +b.dataset.o; saveState(); markQ(card, i); qScore(); updPts();
+});
+
+/* ---------- liberação, cronômetro e sincronização ---------- */
+let wasOver = null;
+function setOpen(open){
+  $$('[data-lock]').forEach(x => { x.hidden = open; });
+  $$('[data-gated]').forEach(x => { x.hidden = !open; });
+  if (open && SRV.semente){
+    if (ST.semente !== SRV.semente){ ST.semente = SRV.semente; Object.assign(ST, vazio()); saveState(); }
+    if (!EXS || EXS.semente !== SRV.semente){
+      EXS = bExercicios_(SRV.semente); EXS.semente = SRV.semente;
+      EX.e1.load(EXS.e1); EX.e2.load(EXS.e2); EX.e3.load(EXS.e3);
+    }
+  }
+  refreshOver(true); updPts();
+}
+function refreshOver(force){
+  const over = acabou(); if (!force && over === wasOver) return; wasOver = over;
+  if (EXS){ if (CONFIGURED && over){ EX.e1.corr = EX.e2.corr = EX.e3.corr = true; } EX.e3.build(); ['e1', 'e2', 'e3'].forEach(k => EX[k].render()); }
+  AV.sim.fillGraphs(); updPts();
+}
+function clockTick(){
+  const c = $('#clock');
+  if (SRV.status === 'teste'){ c.className = 'clock'; c.textContent = 'modo de teste (sem servidor)'; }
+  else if (SRV.status === 'carregando'){ c.className = 'clock'; c.textContent = 'conectando…'; }
+  else if (SRV.status === 'aguardando'){ c.className = 'clock'; c.textContent = 'aguardando o início'; }
+  else {
+    const rest = (SRV.fim - nowSrv())/1000;
+    if (rest > 0){ c.className = 'clock ' + (rest < 120 ? 'warn' : 'on'); c.textContent = `⏱ ${mmss(rest)} restantes`; }
+    else { c.className = 'clock end'; c.textContent = 'tempo encerrado'; if (SRV.status === 'andamento'){ SRV.status = 'encerrada'; syncServer(); } }
+  }
+  refreshOver(false); pfClock();
+}
+setInterval(clockTick, 1000);
+let syncT = null;
+function applyRodada(rod){
+  rod = Number(rod); if (!rod) return false;
+  if (ST.rodada == null){ ST.rodada = rod; saveState(); return false; }
+  if (ST.rodada === rod) return false;
+  Object.assign(ST, { rodada:rod, semente:null, quiz:{} }, vazio()); saveState();
+  try { sessionStorage.setItem('busca-nova', String(rod)); } catch (_) {}
+  location.reload(); return true;
+}
+async function syncServer(){
+  clearTimeout(syncT); if (!CONFIGURED) return;
+  try {
+    const t0 = Date.now(), r = await fetch(`${SCRIPT_URL}?acao=ping`), j = await r.json();
+    if (j && j.ok){
+      if (applyRodada(j.rodada)) return;
+      SRV.offset = j.agora - Math.round((t0 + Date.now())/2);
+      Object.assign(SRV, { status:j.status, inicio:j.inicio, fim:j.fim, semente:j.semente || null });
+      setOpen(j.status !== 'aguardando'); clockTick();
+    }
+  } catch (_) { if (SRV.status === 'carregando') $('#clock').textContent = 'sem conexão; tentando de novo'; }
+  syncT = setTimeout(syncServer, (SRV.status === 'aguardando' || SRV.status === 'carregando' ? 8000 : SRV.status === 'andamento' ? 25000 : 60000) + Math.random()*3000);
+}
+
+/* ---------- progresso, pontos e envio ---------- */
+const TOTAL_ITENS = 2*(BUSCA_N - 1) + 10 + BUSCA_QUIZ_N;
+function itens(){ return (EXS ? EX.e1.tree().ordem.length - 1 + EX.e2.tree().ordem.length - 1 + EX.e3.filled() : 0) + Object.keys(ST.quiz).length; }
+function updPts(){
+  const el = $('#pts');
+  if (EXS && acabou()){ const n = nota(); el.textContent = `${CONFIGURED ? 'nota' : 'nota (teste)'}: ${n.pontos} / ${n.max}`; }
+  else el.textContent = `${itens()} de ${TOTAL_ITENS} respostas`;
+  ['e1', 'e2', 'e3'].forEach(k => { if (EX[k].ready && !EX[k].corr) EX[k].r('pts').textContent = k === 'e3' ? `${EX.e3.filled()} de 10 campos preenchidos` : `${EX[k].tree().ordem.length - 1} de ${BUSCA_N - 1} vértices descobertos`; });
+}
+const who = $('#who'), mat = $('#mat'), sendp = $('#sendp');
+who.value = ST.nome || ''; mat.value = ST.mat || '';
+who.addEventListener('input', () => { ST.nome = who.value; who.classList.remove('need'); saveState(); });
+mat.addEventListener('input', () => { ST.mat = mat.value; saveState(); });
+function panel(html, kind = ''){ sendp.hidden = false; sendp.className = 'wrap send-panel' + (kind ? ' ' + kind : ''); sendp.innerHTML = html; }
+const closeBtn = '<button class="btn" type="button" data-act="close">Fechar</button>';
+$('#send').addEventListener('click', () => {
+  const nome = who.value.trim();
+  if (!CONFIGURED){ panel(`<span><b>Modo de teste: o envio não está configurado.</b> Suas respostas ficam salvas neste navegador.</span>${closeBtn}`, 'bad'); return; }
+  if (SRV.status === 'aguardando' || SRV.status === 'carregando'){ panel(`<span><b>A competição ainda não começou.</b> Aguarde o professor iniciar o cronômetro.</span>${closeBtn}`, 'bad'); return; }
+  if (nome.length < 3){ who.classList.add('need'); who.focus(); panel(`<span><b>Falta o seu nome.</b> Digite seu nome completo no campo acima antes de enviar.</span>${closeBtn}`, 'bad'); return; }
+  const late = acabou();
+  panel(`<span>Enviar suas respostas (<b>${itens()} de ${TOTAL_ITENS}</b> preenchidas) em nome de <b>${esc(nome)}</b>${mat.value.trim() ? ` (matrícula ${esc(mat.value.trim())})` : ''}? ${late ? '<b>O tempo acabou:</b> o envio será gravado, mas não muda sua posição no ranking.' : 'Você pode enviar de novo depois, mas vale sempre o <b>último</b> envio: as respostas e o horário dele.'}</span><div class="row"><button class="btn btn-primary" type="button" data-act="ok">Confirmar envio</button>${closeBtn.replace('Fechar', 'Cancelar')}</div>`);
+});
+sendp.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if (!b) return; if (b.dataset.act === 'close'){ sendp.hidden = true; return; } if (b.dataset.act === 'ok') doSend(); });
+async function doSend(){
+  const body = JSON.stringify({ sid:uuid(), aluno:ST.aluno, nome:who.value.trim(), matricula:mat.value.trim(), turma:TURMA, rodada:ST.rodada, respostas:respostas() });
+  panel('<span>Enviando…</span>');
+  let res = null;
+  try { const r = await fetch(SCRIPT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body }); res = await r.json(); }
+  catch (_) {
+    try { await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body }); panel(`<span><b>Enviado.</b> O servidor não devolveu confirmação; se precisar, envie de novo.</span>${closeBtn}`, 'ok'); }
+    catch (__) { panel(`<span><b>Não foi possível enviar.</b> Verifique a conexão e tente de novo. Suas respostas continuam salvas.</span>${closeBtn}`, 'bad'); }
+    return;
+  }
+  if (res && !res.ok && res.erro === 'rodada'){ applyRodada(res.rodada); return; }
+  if (res && !res.ok && res.erro === 'aguardando'){ panel(`<span><b>A competição ainda não começou.</b></span>${closeBtn}`, 'bad'); return; }
+  if (res && res.ok && res.duplicado){ panel(`<span><b>Este envio já tinha sido recebido.</b></span>${closeBtn}`, 'ok'); return; }
+  if (res && res.ok) panel(`<span><b>Recebido aos ${mmss(res.tempo)} de prova.</b> ${res.noPrazo ? 'Este passa a ser o seu envio válido no ranking. A pontuação aparece quando o tempo acabar.' : `Enviado depois do prazo: fica gravado, mas não altera o ranking.${res.pontos != null ? ` Pontuação deste envio: ${res.pontos} de ${res.max}.` : ''}`}</span>${closeBtn}`, res.noPrazo ? 'ok' : 'bad');
+  else panel(`<span><b>O servidor recusou o envio:</b> ${esc((res && res.erro) || 'erro desconhecido')}.</span>${closeBtn}`, 'bad');
+}
+try { const nr = sessionStorage.getItem('busca-nova'); if (nr){ sessionStorage.removeItem('busca-nova'); panel(`<span><b>Nova competição.</b> O professor iniciou uma nova rodada: seu progresso foi zerado.</span>${closeBtn}`, 'ok'); } } catch (_) {}
+
+/* ================= Área do professor ================= */
+const PF = { key:'', data:null, timer:null, seen:new Set(), first:true, telao:false, prevRank:new Map(), full:false };
+try { PF.key = sessionStorage.getItem('busca-prof') || ''; } catch (_) {}
+function pfMsg(t){ $('#pf-status').textContent = t; }
+async function pfLoad(){
+  clearTimeout(PF.timer); if (!CONFIGURED || !PF.key) return;
+  try {
+    const t0 = Date.now(), r = await fetch(`${SCRIPT_URL}?acao=ranking&chave=${encodeURIComponent(PF.key)}&turma=${encodeURIComponent(TURMA)}`), j = await r.json();
+    if (!j.ok){ pfMsg(j.erro === 'chave' ? 'Chave incorreta.' : 'Erro: ' + (j.erro || 'desconhecido')); $('#pf-panel').hidden = true; return; }
+    try { sessionStorage.setItem('busca-prof', PF.key); } catch (_) {}
+    SRV.offset = j.agora - Math.round((t0 + Date.now())/2);
+    PF.data = j; $('#pf-panel').hidden = false; pfRender();
+    pfMsg(`atualizado às ${new Date().toLocaleTimeString('pt-BR')}`);
+  } catch (_) { pfMsg('Não foi possível ler o servidor. Confira a URL do script e a conexão.'); }
+  if ($('#pf-auto').checked || PF.telao) PF.timer = setTimeout(pfLoad, 5000);
+}
+function stateLabel(s){ return s === 'andamento' ? ['em andamento', 'on'] : s === 'encerrada' ? ['encerrada', 'end'] : ['aguardando início', '']; }
+function pfClock(){
+  const j = PF.data; if (!j) return;
+  const st = j.status === 'andamento' && nowSrv() > j.fim ? 'encerrada' : j.status;
+  const [lab, cls] = stateLabel(st), txt = st === 'andamento' ? mmss((j.fim - nowSrv())/1000) : st === 'encerrada' ? '00:00' : '--:--';
+  for (const [s, c] of [['#pf-state', '#pf-clock'], ['#tl-state', '#tl-clock']]){ $(s).textContent = lab; $(s).className = 'state-chip ' + cls; $(c).textContent = txt; }
+  $('#pf-start-g').hidden = st !== 'aguardando'; $('#pf-run-g').hidden = st === 'aguardando'; $('#pf-stop').hidden = st !== 'andamento';
+  $('#pf-plus').textContent = st === 'encerrada' ? 'Reabrir +5 min' : '+5 min';
+}
+const byName = (a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity:'base' });
+function pfRender(){
+  const j = PF.data; pfClock();
+  const rk = j.ranking || [], full = PF.full;
+  $('#pf-count').textContent = `${rk.length} no ranking · ${j.total} envios`;
+  $('#pf-full').textContent = full ? 'Mostrar só o pódio' : 'Mostrar classificação completa'; $('#pf-full').setAttribute('aria-pressed', String(full));
+  const changed = a => PF.prevRank.size && PF.prevRank.get(a.chave) !== a.enviado;
+  if (!rk.length) $('#pf-rank').innerHTML = '<p class="hint">Nenhum envio válido ainda.</p>';
+  else if (full) $('#pf-rank').innerHTML = `<table class="rk-table"><thead><tr><th>#</th><th>Aluno</th><th>Pontos</th><th>Tempo</th><th>Envios</th><th>Último válido</th></tr></thead><tbody>${rk.map((a, i) => `<tr class="${changed(a) ? 'flash' : ''}"><td><span class="medal ${i < 3 ? 'g' + (i + 1) : ''}">${i + 1}</span></td><td>${esc(a.nome)}${a.matricula ? `<br><span class="hint">${esc(a.matricula)}</span>` : ''}</td><td class="n"><b>${a.pontos}</b>/${a.max}</td><td class="n">${mmss(a.tempo)}</td><td class="n">${a.envios}${a.atrasados ? ` <span class="tag-late">${a.atrasados} fora</span>` : ''}</td><td class="n">${hora(a.enviado)}</td></tr>`).join('')}</tbody></table>`;
+  else {
+    const resto = rk.slice(3).sort(byName);
+    $('#pf-rank').innerHTML = `<div class="podio">${rk.slice(0, 3).map((a, i) => `<div class="pd ${changed(a) ? 'flash' : ''}"><span class="medal g${i + 1}">${i + 1}</span><span class="nm">${esc(a.nome)}</span><span class="n"><b>${a.pontos}</b>/${a.max}</span><span class="n tmx">${mmss(a.tempo)}</span></div>`).join('')}</div>${resto.length ? `<p class="hint" style="margin-top:12px">Também enviaram (em ordem alfabética, sem classificação):</p><div class="nomes">${resto.map(a => `<span>${esc(a.nome)}</span>`).join('')}</div>` : ''}`;
+  }
+  const late = (j.foraDoPrazo || []).slice().sort(byName);
+  $('#pf-late').innerHTML = late.length ? `<p class="hint" style="margin-top:10px"><b>Enviaram só depois do prazo (fora do ranking):</b> ${late.map(a => full ? `${esc(a.nome)} (${a.pontos}/${a.max})` : esc(a.nome)).join(', ')}</p>` : '';
+  const feed = j.recentes || [];
+  $('#pf-feed').innerHTML = feed.map(e => `<li class="${!PF.first && !PF.seen.has(e.sid) ? 'new' : ''}"><span><span class="t">${hora(e.data)}</span> ${esc(e.nome)}</span><span class="row" style="gap:6px">${full ? `<b>${e.pontos}/${e.max}</b><span class="t">${mmss(e.tempo)}</span>` : '<span class="t">enviou</span>'}<span class="${e.noPrazo ? 'tag-ok' : 'tag-late'}">${e.noPrazo ? 'no prazo' : 'fora do prazo'}</span></span></li>`).join('') || '<li>Nenhum envio ainda.</li>';
+  const fresh = feed.filter(e => !PF.seen.has(e.sid)); feed.forEach(e => PF.seen.add(e.sid));
+  if (PF.telao) tlRender(PF.first ? [] : fresh);
+  PF.prevRank = new Map(rk.map(a => [a.chave, a.enviado])); PF.first = false;
+}
+$('#pf-full').addEventListener('click', () => { PF.full = !PF.full; if (PF.data){ const keep = PF.prevRank; PF.prevRank = new Map(); pfRender(); PF.prevRank = keep; } });
+$('#pf-form').addEventListener('submit', ev => {
+  ev.preventDefault(); PF.key = $('#pf-key').value.trim();
+  if (!PF.key){ pfMsg('Digite a chave.'); return; }
+  if (!CONFIGURED){ pfMsg('Página ainda não ligada à planilha (veja abaixo).'); return; }
+  pfMsg('Conectando…'); PF.first = true; PF.seen.clear(); PF.prevRank.clear(); pfLoad();
+});
+$('#pf-refresh').addEventListener('click', pfLoad);
+$('#pf-auto').addEventListener('change', () => { if ($('#pf-auto').checked) pfLoad(); else clearTimeout(PF.timer); });
+async function pfAction(acao, extra = {}){
+  pfMsg('Enviando comando…');
+  try {
+    const r = await fetch(SCRIPT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify(Object.assign({ acao, chave:PF.key }, extra)) }), j = await r.json();
+    if (!j.ok){ pfMsg(j.erro === 'chave' ? 'Chave incorreta.' : j.erro || 'O servidor recusou o comando.'); return; }
+    pfMsg({ iniciar:'Competição iniciada! Os alunos veem a liberação em até 10 segundos.', tempo:'Tempo ajustado.', encerrar:'Competição encerrada. Novos envios ficam fora do ranking.', novaRodada:'Nova competição criada: ranking zerado e grafos novos. Inicie o cronômetro quando quiser.' }[acao]);
+    if (acao === 'novaRodada'){ PF.seen.clear(); PF.prevRank.clear(); PF.first = true; }
+    pfLoad(); syncServer();
+  } catch (_) { pfMsg('Não foi possível enviar o comando. Confira a conexão.'); }
+}
+$('#pf-start').addEventListener('click', () => { const m = parseInt($('#pf-min').value, 10); if (!(m >= 1 && m <= 600)){ pfMsg('Duração inválida (1 a 600 minutos).'); return; } pfAction('iniciar', { minutos:m }); });
+$('#pf-plus').addEventListener('click', () => pfAction('tempo', { minutos:5 }));
+$('#pf-stop').addEventListener('click', () => pfConfirm('Encerrar a competição agora? Os envios seguintes serão gravados, mas não mudam o ranking.', () => pfAction('encerrar')));
+$('#pf-new').addEventListener('click', () => pfConfirm('Começar uma nova competição? O ranking é zerado, os grafos dos exercícios mudam e cada aluno recomeça do zero ao abrir a página. Os envios atuais continuam guardados na planilha.', () => pfAction('novaRodada')));
+function pfConfirm(text, fn){
+  const c = $('#pf-confirm'); c.hidden = false;
+  c.innerHTML = `<span>${text}</span><div class="row"><button class="btn btn-primary" type="button" data-a="go">Confirmar</button><button class="btn" type="button" data-a="no">Cancelar</button></div>`;
+  c.onclick = ev => { const b = ev.target.closest('[data-a]'); if (!b) return; c.hidden = true; if (b.dataset.a === 'go') fn(); };
+}
+
+/* ---------- telão: pódio (ou ranking completo) para projetar ---------- */
+function tlRender(fresh){
+  const list = $('#tl-list'), rk = (PF.data && PF.data.ranking) || [], full = PF.full;
+  const before = new Map([...list.children].map(li => [li.dataset.k, li.getBoundingClientRect().top]));
+  list.innerHTML = rk.slice(0, full ? 20 : 3).map((a, i) => `<li data-k="${esc(a.chave)}"><span class="medal ${i < 3 ? 'g' + (i + 1) : ''}">${i + 1}</span><span class="nm">${esc(a.nome)}</span><span class="sc">${a.pontos}/${a.max}</span><span class="tm">${mmss(a.tempo)}</span></li>`).join('') || '<li><span></span><span class="nm" style="font-weight:400;color:var(--muted)">Aguardando os primeiros envios…</span><span></span><span></span></li>';
+  const resto = full ? [] : rk.slice(3).sort(byName);
+  $('#tl-nomes').innerHTML = resto.length ? `<span class="lbl">Também já enviaram</span><div class="nomes">${resto.map(a => `<span>${esc(a.nome)}</span>`).join('')}</div>` : '';
+  if (!reduce) [...list.children].forEach(li => {
+    const old = before.get(li.dataset.k), now = li.getBoundingClientRect().top;
+    if (old != null && Math.abs(old - now) > 2){ li.animate([{ transform:`translateY(${old - now}px)` }, { transform:'translateY(0)' }], { duration:900, easing:'cubic-bezier(.2,.8,.2,1)' }); if (old > now){ li.classList.add('up'); setTimeout(() => li.classList.remove('up'), 2200); } }
+    else if (old == null && before.size) li.animate([{ opacity:0, transform:'scale(.96)' }, { opacity:1, transform:'none' }], { duration:600 });
+  });
+  if (fresh && fresh.length) $('#tl-ticker').innerHTML = fresh.map(e => `Novo envio: <b>${esc(e.nome)}</b>${full ? ` · ${e.pontos}/${e.max}` : ''}${e.noPrazo ? '' : ' (fora do prazo)'}`).join(' &nbsp;·&nbsp; ');
+}
+function tlOpen(){ PF.telao = true; const t = $('#telao'); t.hidden = false; try { if (t.requestFullscreen) t.requestFullscreen().catch(() => {}); } catch (_) {} tlRender([]); pfClock(); pfLoad(); }
+function tlClose(){ PF.telao = false; $('#telao').hidden = true; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {} }
+$('#pf-telao').addEventListener('click', tlOpen);
+$('#tl-close').addEventListener('click', tlClose);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && PF.telao) tlClose(); });
+
+/* ================= Início ================= */
+const AV = {
+  bfs:new AlgoView($('[data-av="bfs"]'), { algo:'bfs', graphs:['g11', 'st', 'st12'] }),
+  dfs:new AlgoView($('[data-av="dfs"]'), { algo:'dfs', graphs:['g11', 'st', 'st12'] }),
+  dij:new AlgoView($('[data-av="dij"]'), { algo:'dij', graphs:['dA', 'd3', 'd31', 'd6'] }),
+  sim:new AlgoView($('[data-av="sim"]'), { algos:true, rnd:true, graphs:Object.keys(GRAFOS) }),
+};
+AV.bfs.pickGraph(false, false); AV.dfs.pickGraph(false, false); AV.dfs.c('t').value = ''; AV.dfs.run(false); AV.dij.pickGraph(false, false);
+AV.sim.c('g').value = 'st'; AV.sim.pickGraph(false, false);
+demoRun(false);
+renderQuiz(); updPts(); clockTick();
+if (!CONFIGURED){ $('#pf-setup').hidden = false; setOpen(true); }
+else { setOpen(false); syncServer(); if (PF.key){ $('#pf-key').value = PF.key; pfLoad(); } }
+})();
+</script>
+</body>
+</html>
