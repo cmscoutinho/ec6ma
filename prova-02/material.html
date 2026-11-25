@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Material de consulta — Teoria dos Grafos · CESUPA</title>
+  <link rel="icon" href="img/cesupa_logo.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="cab"></div>
+  <div id="material"></div>
+  <script src="js/config.js"></script>
+  <script type="module">
+    import { cabecalhoInstitucional, h } from './js/util.js';
+    import { api } from './js/api.js';
+    import { montarPainelMaterial } from './js/componentes/visualizador.js';
+    let cfg = null;
+    try { cfg = (await api('status')).config; } catch (e) { /* segue sem cabeçalho detalhado */ }
+    document.getElementById('cab').append(cabecalhoInstitucional(cfg, h('a', { class: 'btn sec peq', href: 'index.html' }, '← Página da prova')));
+    montarPainelMaterial(document.getElementById('material'));
+  </script>
+</body>
+</html>
